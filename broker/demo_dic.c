@@ -6,7 +6,6 @@
 struct persona {
     char *nombre;
     int edad;
-    // ....
 };
 
 void libera_persona(char *c, void *v) {
