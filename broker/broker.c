@@ -9,9 +9,6 @@
 #include <pthread.h>
 
 #define TAM 1024
-struct mensajes{
-    char * mensaje;
-};
 /*
     Funcion que libera la estructura de datos de la cola
  */
@@ -32,10 +29,32 @@ Esta funcion se ejecuta cuando llega una operacion de eliminar cola.
 Busca en el diccionario la cola que se quiere eliminar y si existe la borra, junto a sus mensajes.
 En caso de que no exista da un error 
 */
-
 void *elimina_cola(struct diccionario *d, char *name){
 if (dic_remove_entry(d,name, libera_cola) < 0)
         fprintf(stderr, "Cola no existente\n");
+}
+
+/*
+    Esta funcion se ejectua cuando lelga la orden de añadir un mensaje a la cola corresponiente
+ */
+void *escritura_mensaje(struct diccionario *d,char *key, void *mensaje){
+    int error = 0;
+    struct cola *c;
+    c = dic_get(d,key,error);
+    if(error<0){
+        fprintf(stderr, "No existe la cola solicitida duplicada \n");
+    }
+   if(cola_push_back(c,mensaje)<0){
+        fprintf(stderr, "Error al introducir el mensaje en la cola solicitada \n");
+   }
+   free(c);
+}
+
+/*
+    ESta funcion se ejectua cuando llega la orden de leer un mensaje
+ */
+void *lectura_mensaje(struct diccionario *d){
+
 }
 
 void * servicio(void *arg){
