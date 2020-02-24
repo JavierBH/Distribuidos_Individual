@@ -3,3 +3,8 @@
  * necesitar compartir el broker y la biblioteca, si es que las hubiera.
  */
 #include "comun.h"
+
+struct nombre_cola{
+    int op;
+    char *cola;
+};
