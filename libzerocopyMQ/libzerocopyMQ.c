@@ -25,6 +25,10 @@ int createMQ(const char *cola) {
 		return -1;
 	}
     host = getenv("BROKER_HOST");
+    if(host == NULL){
+        perror("Error en la variable del HOST\n");
+        return -1;
+    }
 	host_info=gethostbyname(host);
 	if(host_info == NULL){
         perror("La dirección IP del host es errónea\n");
@@ -42,7 +46,7 @@ int createMQ(const char *cola) {
 	dir.sin_addr=*(struct in_addr *)host_info->h_addr;
 	dir.sin_port=htons(atoi(port));
 	dir.sin_family=PF_INET;
-	if (s_connect = connect(s, (struct sockaddr *)&dir, sizeof(dir)) < 0) {
+	if ((s_connect = connect(s, (struct sockaddr *)&dir, sizeof(dir))) < 0) {
 		perror("error en connect");
 		close(s);
 		return -1;
@@ -53,12 +57,11 @@ int createMQ(const char *cola) {
      iov[0].iov_base = buff; 
      iov[0].iov_len = strlen(buff);
   /* writev(socket,iov structure, number of buffers refer in the iov structure) */
-    if(writev(s_connect,iov,1)<0){
+    if(writev(s,iov,1)<0){
         perror("error en send");
 		close(s);
 		return -1;
     }
-    close(s_connect);
 	return 0;
 
 }

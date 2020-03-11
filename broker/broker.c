@@ -104,27 +104,24 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 	while (1) {
-		tam_dir=sizeof(dir_cliente);
+		tam_dir=sizeof(dir);
 		
-		if ((s_conec=accept(s, (struct sockaddr *)&dir_cliente, &tam_dir))<0){
+		if ((s_conec=accept(s, (struct sockaddr *)&dir, &tam_dir))<0){
 			perror("error en accept");
 			close(s);
 			return -1;
 		}
-fprintf(stderr,"iov[0].iov_base");
+
 	//-------- AQUI ACABA EL CODIGO DEL SOCKET --------
-		char buff[64];
-		struct iovec iov[1];
-		iov[0].iov_base = buff;
-		iov[0].iov_len = sizeof(buff);
+		char *buff;
+		buff = malloc(10);
 		/*readv(socket descriptor, iov structure, number of buffers expected) */
-		if(readv(s_conec,iov,1)<0){
+		if(read(s_conec,buff,sizeof(buff))<0){
 			perror("Error en la llegada");
 			close(s);
-			close(s_conec);
 			return -1;
 		}
-		fprintf(stderr,buff);
+		printf(buff);
 		close(s_conec);
 	}
 	close(s);
