@@ -113,15 +113,43 @@ int main(int argc, char *argv[]) {
 		}
 
 	//-------- AQUI ACABA EL CODIGO DEL SOCKET --------
-		char *buff;
-		buff = malloc(10);
-		/*readv(socket descriptor, iov structure, number of buffers expected) */
-		if(read(s_conec,buff,sizeof(buff))<0){
+		int *op;
+		char *name_cola;
+		char *msg;
+		/*
+		El orden de llegada es el siguiente:
+		- Se recibe un int indicando el numero de operacion
+		- SE recibe la longitud de la cola
+		- Se recibe el nombre de la cola
+		- Se recibe la longitud del mensaje
+		- Se recibe el mensaje (se recibe un 0 en caso de que no haya mensaje se recibira un 0)		
+		readv(socket descriptor, iov structure, number of buffers expected) 
+		*/
+		op = malloc(sizeof(int));
+		if(read(s_conec,op,sizeof(op))<0){
 			perror("Error en la llegada");
 			close(s);
 			return -1;
 		}
-		printf(buff);
+		switch (*op){
+		case 0: //Crear Cola
+			free(op);
+			/* code */
+			break;
+		case 1: //Destruir Cola
+			/* code */
+			break;
+		case 2: //put
+			/* code */
+			break;
+		case 3: //get
+			/* code */
+			break;
+		default:
+			perror("Error en el codigo de operacion");
+			break;
+		}
+		free(op);
 		close(s_conec);
 	}
 	close(s);
