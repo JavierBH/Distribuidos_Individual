@@ -116,6 +116,7 @@ int main(int argc, char *argv[]) {
 		int *op;
 		char *name_cola;
 		char *msg;
+
 		/*
 		El orden de llegada es el siguiente:
 		- Se recibe un int indicando el numero de operacion
@@ -125,16 +126,24 @@ int main(int argc, char *argv[]) {
 		- Se recibe el mensaje (se recibe un 0 en caso de que no haya mensaje se recibira un 0)		
 		readv(socket descriptor, iov structure, number of buffers expected) 
 		*/
-		op = malloc(sizeof(int));
-		if(read(s_conec,op,sizeof(op))<0){
+
+		op = (int*)malloc(sizeof(int));
+		//Se recibe el codigo de operacion
+		if(read(s_conec,op,1)<0){
 			perror("Error en la llegada");
 			close(s);
 			return -1;
 		}
+
+		//Se reserva espacio para una cadena 4096 caracteres
+		name_cola= (char *)malloc(TAM*sizeof(char));
+		//Se leen 4096 caracteres, si el tamaño de la cola es mayor se utilizawr realloc
+		while(read(s_conec,name_cola,TAM)>0){
+			name_cola=realloc(name_cola,TAM*sizeof(char)+sizeof(name_cola));
+		}
+		//Nota: op tiene el valor en ASCII
 		switch (*op){
-		case 0: //Crear Cola
-			free(op);
-			/* code */
+		case '0': //Crear Cola
 			break;
 		case 1: //Destruir Cola
 			/* code */
@@ -147,6 +156,8 @@ int main(int argc, char *argv[]) {
 			break;
 		default:
 			perror("Error en el codigo de operacion");
+			free(op);
+			close(s_conec);
 			break;
 		}
 		free(op);

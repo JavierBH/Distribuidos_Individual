@@ -51,16 +51,12 @@ int createMQ(const char *cola) {
 		close(s);
 		return -1;
 	}
-    char *buff;
-    struct iovec iov[1];
-     buff = "1";
-     iov[0].iov_base = buff; 
-     iov[0].iov_len = strlen(buff);
-  /* writev(socket,iov structure, number of buffers refer in the iov structure) */
-    if(writev(s,iov,1)<0){
-        perror("error en send");
-		close(s);
-		return -1;
+
+    char *op;
+    op = "0";
+    if (send_cabecera(s,op,(char *)cola)<0){
+        perror("Error en el envio del codigo");
+        return -1;
     }
 	return 0;
 
