@@ -11,27 +11,28 @@
 #include <stdlib.h>
 
 #define TAM 1024
-/*
-    Funcion que libera la estructura de datos de la cola
+
+   // Funcion que libera la estructura de datos de la cola
 
 void libera_cola(void *c){
     free(c);
 }
 
- Esta funcion se ejecuta en el caso de que se quiera crear una cola
+ /*Esta funcion se ejecuta en el caso de que se quiera crear una cola
     Añade la cola al diccionario, asignandole un valor de la cola, ya que se encuentra vacia. DE la siguiente manera:
-    Name_cola : struct cola
+    Name_cola : struct cola*/
 
-void *crea_cola(struct diccionario *d, char *name){
+int *crea_cola(struct diccionario *d, char *name){
  if (dic_put(d, name, cola_create()) < 0){
         fprintf(stderr, "Cola duplicada \n");
+		return -1;
 	}
+	return 0;
 }
 
-
-Esta funcion se ejecuta cuando llega una operacion de eliminar cola.
+/*Esta funcion se ejecuta cuando llega una operacion de eliminar cola.
 Busca en el diccionario la cola que se quiere eliminar y si existe la borra, junto a sus mensajes.
-En caso de que no exista da un error 
+En caso de que no exista da un error*/
 
 void *elimina_cola(struct diccionario *d, char *name){
 	if (dic_remove_entry(d,name, libera_cola) < 0){
@@ -39,8 +40,7 @@ void *elimina_cola(struct diccionario *d, char *name){
 	}
 }
 
-
-    Esta funcion se ejectua cuando lelga la orden de añadir un mensaje a la cola corresponiente
+    //Esta funcion se ejectua cuando lelga la orden de añadir un mensaje a la cola corresponiente
 
 void *escritura_mensaje(struct diccionario *d,char *cola, void *mensaje){
     int error = 0;
@@ -54,10 +54,8 @@ void *escritura_mensaje(struct diccionario *d,char *cola, void *mensaje){
    }
    free(c);
 }
- 
 
-    Esta funcion se ejectua cuando llega la orden de leer un mensaje
-
+ //   Esta funcion se ejectua cuando llega la orden de leer un mensaje
 
 char *lectura_mensaje(struct diccionario *d, char *cola){
 	int error = 0;
@@ -68,11 +66,21 @@ char *lectura_mensaje(struct diccionario *d, char *cola){
     }
 	return cola_pop_front(c,&error);
 }
- */
+
+//Funcion que devuelve al cliente 0 si la operacion ha sido correcta y -1 si ha sido incrorecta.  
+int send_response(int s,int code){
+	if(write(s,code,sizeof(code))<0){
+		perror("error en el envio del codigo");
+		return -1;
+	}
+	return 0;
+}
+
 int main(int argc, char *argv[]) {
 	int s, s_conec, leido;
 	unsigned int tam_dir;
 	struct sockaddr_in dir, dir_cliente;
+	struct diccionario *d;
 	char buf[TAM];
 	int opcion=1;
 
@@ -103,6 +111,11 @@ int main(int argc, char *argv[]) {
 		close(s);
 		return -1;
 	}
+
+	if((d = dic_create())==NULL){
+		perror("Error al crear el diccionario");
+	}
+
 	while (1) {
 		tam_dir=sizeof(dir);
 		
@@ -111,7 +124,6 @@ int main(int argc, char *argv[]) {
 			close(s);
 			return -1;
 		}
-
 	//-------- AQUI ACABA EL CODIGO DEL SOCKET --------
 		int *op;
 		char *name_cola;
@@ -138,20 +150,24 @@ int main(int argc, char *argv[]) {
 		//Se reserva espacio para una cadena 4096 caracteres
 		name_cola= (char *)malloc(TAM*sizeof(char));
 		//Se leen 4096 caracteres, si el tamaño de la cola es mayor se utilizawr realloc
-		while(read(s_conec,name_cola,TAM)>0){
+		while(recv(s_conec,name_cola,TAM)==1024){
 			name_cola=realloc(name_cola,TAM*sizeof(char)+sizeof(name_cola));
 		}
+		
 		//Nota: op tiene el valor en ASCII
 		switch (*op){
 		case '0': //Crear Cola
+			free(op);
+			crea_cola(d,name_cola);
+			free(name_cola);
 			break;
-		case 1: //Destruir Cola
+		case '1': //Destruir Cola
 			/* code */
 			break;
-		case 2: //put
+		case '2': //put
 			/* code */
 			break;
-		case 3: //get
+		case '3': //get
 			/* code */
 			break;
 		default:

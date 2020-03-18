@@ -14,45 +14,13 @@
 #define TAM 1024
 
 int createMQ(const char *cola) {
-	int s, s_connect, leido;
-	struct sockaddr_in dir;
-	struct hostent *host_info;
-	char buf[TAM];
-    char *host; // Host name
-    char *port; // Host port
-	if ((s=socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-		perror("error creando socket");
-		return -1;
-	}
-    host = getenv("BROKER_HOST");
-    if(host == NULL){
-        perror("Error en la variable del HOST\n");
-        return -1;
-    }
-	host_info=gethostbyname(host);
-	if(host_info == NULL){
-        perror("La dirección IP del host es errónea\n");
-        return -1;
-    }
-
-    port = getenv("BROKER_PORT");
-    if(port == NULL){
-        perror("El puerto del host es erróneo\n");
-        return -1;
-    }
-
-	// 2 alternativas
-	//memcpy(&dir.sin_addr.s_addr, host_info->h_addr, host_info->h_length);
-	dir.sin_addr=*(struct in_addr *)host_info->h_addr;
-	dir.sin_port=htons(atoi(port));
-	dir.sin_family=PF_INET;
-	if ((s_connect = connect(s, (struct sockaddr *)&dir, sizeof(dir))) < 0) {
-		perror("error en connect");
-		close(s);
-		return -1;
-	}
-
+    int s;
     char *op;
+    if((s = create_socket())<0){
+        perror("error creando el socket");
+        return -1;
+    }
+
     op = "0";
     if (send_cabecera(s,op,(char *)cola)<0){
         perror("Error en el envio del codigo");
