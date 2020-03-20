@@ -22,7 +22,7 @@ void libera_cola(void *c){
     Añade la cola al diccionario, asignandole un valor de la cola, ya que se encuentra vacia. DE la siguiente manera:
     Name_cola : struct cola*/
 
-int *crea_cola(struct diccionario *d, char *name){
+int crea_cola(struct diccionario *d, char *name){
  if (dic_put(d, name, cola_create()) < 0){
         fprintf(stderr, "Cola duplicada \n");
 		return -1;
@@ -34,10 +34,12 @@ int *crea_cola(struct diccionario *d, char *name){
 Busca en el diccionario la cola que se quiere eliminar y si existe la borra, junto a sus mensajes.
 En caso de que no exista da un error*/
 
-void *elimina_cola(struct diccionario *d, char *name){
+int elimina_cola(struct diccionario *d, char *name){
 	if (dic_remove_entry(d,name, libera_cola) < 0){
     	    fprintf(stderr, "Cola no existente\n");
+			return -1;
 	}
+	return 0;
 }
 
     //Esta funcion se ejectua cuando lelga la orden de añadir un mensaje a la cola corresponiente
@@ -69,19 +71,24 @@ char *lectura_mensaje(struct diccionario *d, char *cola){
 
 //Funcion que devuelve al cliente 0 si la operacion ha sido correcta y -1 si ha sido incrorecta.  
 int send_response(int s,int code){
-	if(write(s,code,sizeof(code))<0){
-		perror("error en el envio del codigo");
+	char *response;
+	if(code==0){
+		response = "OK";
+	}else{
+		response = "FAIL";
+	}
+	if(write(s,response,strlen(response))<0){
+		perror("Error en el envio del codigo");
 		return -1;
 	}
 	return 0;
 }
 
 int main(int argc, char *argv[]) {
-	int s, s_conec, leido;
+	int s, s_conec;
 	unsigned int tam_dir;
 	struct sockaddr_in dir, dir_cliente;
 	struct diccionario *d;
-	char buf[TAM];
 	int opcion=1;
 
 	if (argc!=2) {
@@ -128,7 +135,7 @@ int main(int argc, char *argv[]) {
 		int *op;
 		char *name_cola;
 		char *msg;
-
+		int error;
 		/*
 		El orden de llegada es el siguiente:
 		- Se recibe un int indicando el numero de operacion
@@ -150,19 +157,21 @@ int main(int argc, char *argv[]) {
 		//Se reserva espacio para una cadena 4096 caracteres
 		name_cola= (char *)malloc(TAM*sizeof(char));
 		//Se leen 4096 caracteres, si el tamaño de la cola es mayor se utilizawr realloc
-		while(recv(s_conec,name_cola,TAM)==1024){
+		while(read(s_conec,name_cola,TAM)==1024){
 			name_cola=realloc(name_cola,TAM*sizeof(char)+sizeof(name_cola));
 		}
-		
 		//Nota: op tiene el valor en ASCII
 		switch (*op){
 		case '0': //Crear Cola
 			free(op);
-			crea_cola(d,name_cola);
+			error = crea_cola(d,name_cola);	
 			free(name_cola);
+			send_response(s_conec,error);
 			break;
 		case '1': //Destruir Cola
-			/* code */
+			free(op);
+			elimina_cola(d,name_cola);
+			free(name_cola);
 			break;
 		case '2': //put
 			/* code */
@@ -176,7 +185,6 @@ int main(int argc, char *argv[]) {
 			close(s_conec);
 			break;
 		}
-		free(op);
 		close(s_conec);
 	}
 	close(s);

@@ -79,3 +79,15 @@ int create_socket(){
 	}
   return s;
 }
+
+int recv_response(int s){
+  char *op;
+  op = malloc(8);
+  
+  if (read(s,op,sizeof(op))<0){
+    perror("Error en la respuesta");
+    return -1;
+  }
+  perror(op);
+  return op == "OK"? 0:-1;
+}

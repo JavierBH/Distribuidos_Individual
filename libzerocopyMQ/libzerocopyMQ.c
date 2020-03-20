@@ -31,11 +31,53 @@ int createMQ(const char *cola) {
 }
 
 int destroyMQ(const char *cola){
+    int s;
+    char *op;
+    if((s = create_socket())<0){
+        perror("error creando el socket");
+        return -1;
+    }
+
+    op = "1";
+    if (send_cabecera(s,op,(char *)cola)<0){
+        perror("Error en el envio del codigo");
+        return -1;
+    }
+    if(recv_response(s)<0){
+        perror("Error en la respuesta");
+        return -1;
+    }
     return 0;
 }
+
 int put(const char *cola, const void *mensaje, uint32_t tam) {
+    int s;
+    char *op;
+    if((s = create_socket())<0){
+        perror("error creando el socket");
+        return -1;
+    }
+
+    op = "2";
+    if (send_cabecera(s,op,(char *)cola)<0){
+        perror("Error en el envio del codigo");
+        return -1;
+    }
     return 0;
 }
+
 int get(const char *cola, void **mensaje, uint32_t *tam, bool blocking) {
+    int s;
+    char *op;
+    if((s = create_socket())<0){
+        perror("error creando el socket");
+        return -1;
+    }
+
+    op = "3";
+    if (send_cabecera(s,op,(char *)cola)<0){
+        perror("Error en el envio del codigo");
+        return -1;
+    }
     return 0;
 }
