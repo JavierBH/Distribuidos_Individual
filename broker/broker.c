@@ -9,7 +9,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <stdlib.h>
-
+#include <string.h>
 #define TAM 1024
 
    // Funcion que libera la estructura de datos de la cola
@@ -73,11 +73,11 @@ char *lectura_mensaje(struct diccionario *d, char *cola){
 int send_response(int s,int code){
 	char *response;
 	if(code==0){
-		response = "OK";
+		response = "0";
 	}else{
-		response = "FAIL";
+		response = "1";
 	}
-	if(write(s,response,strlen(response))<0){
+	if(send(s,response,sizeof(response),0)<0){
 		perror("Error en el envio del codigo");
 		return -1;
 	}
@@ -136,15 +136,6 @@ int main(int argc, char *argv[]) {
 		char *name_cola;
 		char *msg;
 		int error;
-		/*
-		El orden de llegada es el siguiente:
-		- Se recibe un int indicando el numero de operacion
-		- SE recibe la longitud de la cola
-		- Se recibe el nombre de la cola
-		- Se recibe la longitud del mensaje
-		- Se recibe el mensaje (se recibe un 0 en caso de que no haya mensaje se recibira un 0)		
-		readv(socket descriptor, iov structure, number of buffers expected) 
-		*/
 
 		op = (int*)malloc(sizeof(int));
 		//Se recibe el codigo de operacion
@@ -154,9 +145,9 @@ int main(int argc, char *argv[]) {
 			return -1;
 		}
 
-		//Se reserva espacio para una cadena 4096 caracteres
+		//Se reserva espacio para una cadena 1024 caracteres
 		name_cola= (char *)malloc(TAM*sizeof(char));
-		//Se leen 4096 caracteres, si el tamaño de la cola es mayor se utilizawr realloc
+		//Se leen 1024 caracteres, si el tamaño de la cola es mayor se utilizawr realloc
 		while(read(s_conec,name_cola,TAM)==1024){
 			name_cola=realloc(name_cola,TAM*sizeof(char)+sizeof(name_cola));
 		}
@@ -165,13 +156,9 @@ int main(int argc, char *argv[]) {
 		case '0': //Crear Cola
 			free(op);
 			error = crea_cola(d,name_cola);	
-			free(name_cola);
 			send_response(s_conec,error);
 			break;
 		case '1': //Destruir Cola
-			free(op);
-			elimina_cola(d,name_cola);
-			free(name_cola);
 			break;
 		case '2': //put
 			/* code */
