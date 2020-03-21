@@ -59,12 +59,28 @@ int send_cabecera(int s, char *op, char *name_cola){
     iov[0].iov_len = strlen(op);
     iov[1].iov_base = name_cola; 
     iov[1].iov_len = strlen(name_cola);
-   // iov[2].iov_base = name_cola; 
-   // iov[2].iov_len = strlen(name_cola);
     if(writev(s,iov,2)<0){
 		  return -1;
     }
     return 0;
+}
+
+int recv_response(int s){
+
+    char *code;
+    code = (char *)malloc(2);
+    if (recv(s,code,sizeof(code),0)<0){
+        perror("Error en la respuesta");
+        return -1;
+    } 
+
+    if(strcmp(code,"0")==0){
+        free(code);
+        return 0;
+    } else {
+        free(code);
+        return -1;
+    }
 }
 
 int createMQ(const char *cola) {
@@ -74,25 +90,12 @@ int createMQ(const char *cola) {
         perror("error creando el socket");
         return -1;
     }
-
     op = "0";
     if (send_cabecera(s,op,(char *)cola)<0){
         perror("Error en el envio del codigo");
         return -1;
     }
-    char *code;
-    code = (char *)malloc(2);
-    if (recv(s,code,sizeof(code),0)<0){
-        perror("Error en la respuesta");
-        return -1;
-        } 
-  if(strcmp(code,"0")==0){
-    free(code);
-    return 0;
-  } else{
-    free(code);
-    return -1;
-  }
+    return recv_response(s);
 }
 
 int destroyMQ(const char *cola){
@@ -108,11 +111,8 @@ int destroyMQ(const char *cola){
         perror("Error en el envio del codigo");
         return -1;
     }
-    /*if(recv_response(s)<0){
-        perror("Error en la respuesta");
-        return -1;
-    }*/
-    return 0;
+    
+    return recv_response(s);
 }
 
 int put(const char *cola, const void *mensaje, uint32_t tam) {

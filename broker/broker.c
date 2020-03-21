@@ -14,7 +14,7 @@
 
    // Funcion que libera la estructura de datos de la cola
 
-void libera_cola(void *c){
+void *libera_cola(char *c){
     free(c);
 }
 
@@ -35,8 +35,20 @@ Busca en el diccionario la cola que se quiere eliminar y si existe la borra, jun
 En caso de que no exista da un error*/
 
 int elimina_cola(struct diccionario *d, char *name){
+	struct cola *c;
+	int *error;
+	if((c=dic_get(d,name,error))==NULL){
+		fprintf(stderr, "Cola no existente\n");
+		return -1;
+	}
+
+	if(cola_destroy(c,libera_cola)<0){
+		fprintf(stderr, "Error al eliminar la cola\n");
+		return -1;
+	}
+
 	if (dic_remove_entry(d,name, libera_cola) < 0){
-    	    fprintf(stderr, "Cola no existente\n");
+    	    fprintf(stderr, "Error al eliminar la cola\n");
 			return -1;
 	}
 	return 0;
@@ -44,17 +56,20 @@ int elimina_cola(struct diccionario *d, char *name){
 
     //Esta funcion se ejectua cuando lelga la orden de añadir un mensaje a la cola corresponiente
 
-void *escritura_mensaje(struct diccionario *d,char *cola, void *mensaje){
+int escritura_mensaje(struct diccionario *d,char *cola, void *mensaje){
     int error = 0;
     struct cola *c;
     c = dic_get(d,cola,&error);
     if(error<0){
-        fprintf(stderr, "No existe la cola solicitida duplicada \n");
+        perror("No existe la cola solicitida duplicada \n");
+		return -1;
     }
    if(cola_push_back(c,mensaje)<0){
-        fprintf(stderr, "Error al introducir el mensaje en la cola solicitada \n");
+       perror("Error al introducir el mensaje en la cola solicitada \n");
+	   return -1;
    }
    free(c);
+   return 0;
 }
 
  //   Esta funcion se ejectua cuando llega la orden de leer un mensaje
@@ -87,7 +102,7 @@ int send_response(int s,int code){
 int main(int argc, char *argv[]) {
 	int s, s_conec;
 	unsigned int tam_dir;
-	struct sockaddr_in dir, dir_cliente;
+	struct sockaddr_in dir;
 	struct diccionario *d;
 	int opcion=1;
 
@@ -134,7 +149,6 @@ int main(int argc, char *argv[]) {
 	//-------- AQUI ACABA EL CODIGO DEL SOCKET --------
 		int *op;
 		char *name_cola;
-		char *msg;
 		int error;
 
 		op = (int*)malloc(sizeof(int));
@@ -159,6 +173,9 @@ int main(int argc, char *argv[]) {
 			send_response(s_conec,error);
 			break;
 		case '1': //Destruir Cola
+			free(op);
+			error = elimina_cola(d,name_cola);	
+			send_response(s_conec,error);
 			break;
 		case '2': //put
 			/* code */
