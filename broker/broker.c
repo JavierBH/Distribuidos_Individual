@@ -149,22 +149,30 @@ int main(int argc, char *argv[]) {
 	//-------- AQUI ACABA EL CODIGO DEL SOCKET --------
 		int *op;
 		char *name_cola;
-		int error;
+		int error, size_name;
 
 		op = (int*)malloc(sizeof(int));
 		//Se recibe el codigo de operacion
 		if(read(s_conec,op,1)<0){
-			perror("Error en la llegada");
+			perror("Error en la llegada del codigo de operacion");
+			close(s);
+			return -1;
+		}
+		//Se recibe el tamaño del nombre de la cola
+		if(read(s_conec,&size_name,sizeof(int))<0){
+			perror("Error en la llegada del tamaño de la cola");
+			close(s);
+			return -1;
+		}
+		//Se reserva tamaño para el nombre de la cola
+		name_cola= (char *)malloc(size_name);
+		//Se recibe el nombre de la cola
+		if(read(s_conec,name_cola,size_name)<0){
+			perror("Error en la llegada del nombre de la cola");
 			close(s);
 			return -1;
 		}
 
-		//Se reserva espacio para una cadena 1024 caracteres
-		name_cola= (char *)malloc(TAM*sizeof(char));
-		//Se leen 1024 caracteres, si el tamaño de la cola es mayor se utilizawr realloc
-		while(read(s_conec,name_cola,TAM)==1024){
-			name_cola=realloc(name_cola,TAM*sizeof(char)+sizeof(name_cola));
-		}
 		//Nota: op tiene el valor en ASCII
 		switch (*op){
 		case '0': //Crear Cola
