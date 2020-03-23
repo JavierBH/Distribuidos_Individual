@@ -63,7 +63,8 @@ int create_socket(){
 /***************************************************************************************************************
     Funcion que envia la cabecera de la operacion,  envia 3 parametros: El cdigo de la operacion, el tamaño del
          nombre de la cola y el nombre de la cola 
-    Recibe 2 parametros:
+    Recibe 3 parametros:
+    - s: El identificador del socket
     - op: Codigo de operacion que equivale con las funciones: 
             0 -> createMQ
             1 -> destroyMQ
@@ -117,6 +118,30 @@ int recv_response(int s){
     }
 }
 
+/***************************************************************************************************************
+    Funcion que envia el mensaje al broker,  envia 2 parametros: El tamaño del mensaje y el mensaje 
+    Recibe 2 parametros:
+    - s: El identificador del socket
+    - msg: El mensaje que se quiere enviar
+    - tam: Tamaño del mensaje
+    Devuelve 0 en caso de que no haya errores y -1 en caso de que los haya
+****************************************************************************************************************/
+
+int send_menssage(int s, char *msg,uint32_t tam){
+    struct iovec iov[2];
+    //Tamaño del mensaje
+    iov[0].iov_base = &tam;
+    iov[0].iov_len = sizeof(tam);
+    //Mensaje
+    iov[1].iov_base = msg; 
+    iov[1].iov_len = strlen(msg);
+    if(writev(s,iov,2)<0){
+        perror("Error en el envio del mensaje");
+        return -1;
+    }
+    return 0;
+}
+
 int createMQ(const char *cola) {
     int s;
     char *op;
@@ -150,7 +175,30 @@ int destroyMQ(const char *cola){
 }
 
 int put(const char *cola, const void *mensaje, uint32_t tam) {
-    return 0;
+    int s;
+    char *op;
+    if((s = create_socket())<0){
+        perror("error creando el socket");
+        return -1;
+    }
+
+    op = "2";
+    if (send_cabecera(s,op,(char *)cola)<0){
+        perror("Error en el envio del codigo");
+        return -1;
+    }
+    
+    if(recv_response(s)<0){
+        perror("Error en la llegada de la respuesta");
+        return -1;
+    }
+
+    if(send_menssage(s, (char *)mensaje,tam)<0){
+        perror("Error en el envio del fichero");
+        return -1;
+    }
+
+    return recv_response(s);
 }
 
 int get(const char *cola, void **mensaje, uint32_t *tam, bool blocking) {
