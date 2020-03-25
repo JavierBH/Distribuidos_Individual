@@ -79,7 +79,7 @@ char *lectura_mensaje(struct diccionario *d, char *cola){
     struct cola *c;
     c = dic_get(d,cola,&error);
     if(error<0){
-        fprintf(stderr, "No existe la cola solicitida duplicada \n");
+        fprintf(stderr, "No existe la cola solicitida \n");
 		return NULL;
     }
 	return cola_pop_front(c,&error);
@@ -100,26 +100,14 @@ int send_response(int s,int code){
 	return 0;
 }
 
-//Fucnion que recive el mensaje
-char *recv_message(int s){
+int recv_tam(int s){
 	int tam;
-	char *msg;
-	tam = malloc(sizeof(uint32_t));
-		//Se recibe el tamaño del mensaje
-		if(read(s,&tam,sizeof(uint32_t))<0){
+	if(read(s,&tam,sizeof(int))<0){
 			perror("Error en la llegada del codigo de operacion");
 			close(s);
-			return NULL;
+			return -1;
 		}
-
-	msg = (char*)malloc(tam);
-	//Se recibe el codigo de operacion
-		if(read(s,msg,tam)<0){
-			perror("Error en la llegada del codigo de operacion");
-			close(s);
-			return NULL;
-		}
-	return msg;
+	return tam;
 }
 
 int main(int argc, char *argv[]) {
@@ -223,7 +211,26 @@ int main(int argc, char *argv[]) {
 			send_response(s_conec,error);
 			break;
 		case '3': //get
-			
+			free(op);
+			char *msg;
+			int size;
+			send_response(s_conec,0);
+			if((size=recv_tam(s_conec))<0){
+				send_response(s_conec,-1);
+				perror("Error en el envio de la respuesta");
+				break;
+			}
+			send_response(s_conec,0);
+			msg = malloc(size);
+			if((msg = lectura_mensaje(d,name_cola))==NULL){
+				perror("Error en la lectura del mensaje");
+				send_message(s_conec,"",sizeof(msg));
+				send_response(s_conec,-1);
+				break;
+			}
+			send_message(s_conec,msg,sizeof(msg));
+			send_response(s_conec,0);
+			free(msg);
 			break;
 		default:
 			perror("Error en el codigo de operacion");
