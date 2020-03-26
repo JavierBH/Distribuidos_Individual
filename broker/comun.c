@@ -63,3 +63,43 @@ int send_message(int s, char *msg,uint32_t tam){
     }
     return 0;
 }
+
+
+//Funcion que devuelve al cliente 0 si la operacion ha sido correcta y -1 si ha sido incrorecta.  
+int send_response(int s,int code){
+	char *response;
+	if(code==0){
+		response = "0";
+	}else{
+		response = "1";
+	}
+	if(send(s,response,sizeof(response),0)<0){
+		perror("Error en el envio del codigo");
+		return -1;
+	}
+	return 0;
+}
+
+/**************************************************************************************************************
+  Funcion que recibe la respuesta del broker de que la operacion se ha realizado con exito
+  
+  Devuelve 0 en caso de acieto y -1 en caso de fallo
+ ****************************************************************************************************************/
+
+int recv_response(int s){
+
+    char *code;
+    code = (char *)malloc(2);
+    if (recv(s,code,sizeof(code),0)<0){
+        perror("Error en la respuesta");
+        return -1;
+    } 
+
+    if(strcmp(code,"0")==0){
+        free(code);
+        return 0;
+    } else {
+        free(code);
+        return -1;
+    }
+}

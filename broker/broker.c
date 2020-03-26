@@ -68,14 +68,15 @@ int elimina_cola(struct diccionario *d, char *name){
     //Esta funcion se ejectua cuando lelga la orden de añadir un mensaje a la cola corresponiente
 
 int escritura_mensaje(struct diccionario *d,char *cola, void *mensaje){
-    int error = 0;
+    int error ;
     struct cola *c;
     c = dic_get(d,cola,&error);
 
     if(error<0){
-        perror("No existe la cola solicitida duplicada \n");
+        perror("No existe la cola solicitida \n");
 		return -1;
     }
+
    if(cola_push_back(c,mensaje)<0){
        perror("Error al introducir el mensaje en la cola solicitada \n");
 	   return -1;
@@ -86,29 +87,17 @@ int escritura_mensaje(struct diccionario *d,char *cola, void *mensaje){
  //   Esta funcion se ejectua cuando llega la orden de leer un mensaje
 
 char *lectura_mensaje(struct diccionario *d, char *cola){
-	int error = 0;
+	int error;
     struct cola *c;
+	char *msg;
     c = dic_get(d,cola,&error);
 	if(error<0){
         fprintf(stderr, "No existe la cola solicitida \n");
 		return NULL;
     }
-	return cola_pop_front(c,&error);
-}
-
-//Funcion que devuelve al cliente 0 si la operacion ha sido correcta y -1 si ha sido incrorecta.  
-int send_response(int s,int code){
-	char *response;
-	if(code==0){
-		response = "0";
-	}else{
-		response = "1";
-	}
-	if(send(s,response,sizeof(response),0)<0){
-		perror("Error en el envio del codigo");
-		return -1;
-	}
-	return 0;
+	msg = cola_pop_front(c,&error);
+	perror(msg);
+	return msg;
 }
 
 int recv_tam(int s){
@@ -240,6 +229,13 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 			send_message(s_conec,msg,sizeof(msg));
+			
+			if(recv_response(s_conec)<0){
+     		   perror("Error en la llegada de la respuesta");
+        	   send_response(s_conec,-1);
+			   break;
+    		}
+
 			send_response(s_conec,0);
 			free(msg);
 			break;

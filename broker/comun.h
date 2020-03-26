@@ -28,3 +28,6 @@
 */
 char *recv_message(int s);
 int send_message(int s, char *msg,uint32_t tam);
+//Funcion que devuelve al cliente 0 si la operacion ha sido correcta y -1 si ha sido incrorecta.  
+int send_response(int s,int code);
+int recv_response(int s);

@@ -94,11 +94,6 @@ int send_cabecera(int s, char *op, char *name_cola){
     }
     return 0;
 }
-/**************************************************************************************************************
-  Funcion que recibe la respuesta del broker de que la operacion se ha realizado con exito
-  
-  Devuelve 0 en caso de acieto y -1 en caso de fallo
- ****************************************************************************************************************/
 
 int send_tam(int s, uint32_t tam){
     struct iovec iov[1];
@@ -109,24 +104,6 @@ int send_tam(int s, uint32_t tam){
         return -1;
     }
     return 0;
-}
-
-int recv_response(int s){
-
-    char *code;
-    code = (char *)malloc(2);
-    if (recv(s,code,sizeof(code),0)<0){
-        perror("Error en la respuesta");
-        return -1;
-    } 
-
-    if(strcmp(code,"0")==0){
-        free(code);
-        return 0;
-    } else {
-        free(code);
-        return -1;
-    }
 }
 
 int createMQ(const char *cola) {
@@ -219,6 +196,12 @@ int get(const char *cola, void **mensaje, uint32_t *tam, bool blocking) {
 
     if((*mensaje=recv_message(s))<0){
         perror("Error en la llegada de la respuesta");
+        send_response(s,-1);
+        return -1;
+    }
+
+    if(send_response(s,0)<0){
+        perror("Error en el envio de la respuesta");
         return -1;
     }
 
