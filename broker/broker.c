@@ -14,8 +14,13 @@
 
    // Funcion que libera la estructura de datos de la cola
 
-void *libera_cola(char *c){
+void libera_cola(void *v){
+	free(v);
+}
+
+void libera_cola_dic(char *c, void *v){
     free(c);
+	free(v);
 }
 
  /*Esta funcion se ejecuta en el caso de que se quiera crear una cola
@@ -23,7 +28,13 @@ void *libera_cola(char *c){
     Name_cola : struct cola*/
 
 int crea_cola(struct diccionario *d, char *name){
- if (dic_put(d, name, cola_create()) < 0){
+	struct cola *c;
+	if((c = cola_create())==NULL){
+		perror("Error creando la cola");
+		return -1;
+	}
+
+ if (dic_put(d, name, c) < 0){
         fprintf(stderr, "Cola duplicada \n");
 		return -1;
 	}
@@ -36,8 +47,8 @@ En caso de que no exista da un error*/
 
 int elimina_cola(struct diccionario *d, char *name){
 	struct cola *c;
-	int *error;
-	if((c=dic_get(d,name,error))==NULL){
+	int error;
+	if((c=dic_get(d,name,&error))==NULL){
 		fprintf(stderr, "Cola no existente\n");
 		return -1;
 	}
@@ -47,7 +58,7 @@ int elimina_cola(struct diccionario *d, char *name){
 		return -1;
 	}
 
-	if (dic_remove_entry(d,name, libera_cola) < 0){
+	if (dic_remove_entry(d,name, libera_cola_dic) < 0){
     	    fprintf(stderr, "Error al eliminar la cola\n");
 			return -1;
 	}
@@ -60,6 +71,7 @@ int escritura_mensaje(struct diccionario *d,char *cola, void *mensaje){
     int error = 0;
     struct cola *c;
     c = dic_get(d,cola,&error);
+
     if(error<0){
         perror("No existe la cola solicitida duplicada \n");
 		return -1;
@@ -68,7 +80,6 @@ int escritura_mensaje(struct diccionario *d,char *cola, void *mensaje){
        perror("Error al introducir el mensaje en la cola solicitada \n");
 	   return -1;
    }
-   free(c);
    return 0;
 }
 
@@ -78,7 +89,7 @@ char *lectura_mensaje(struct diccionario *d, char *cola){
 	int error = 0;
     struct cola *c;
     c = dic_get(d,cola,&error);
-    if(error<0){
+	if(error<0){
         fprintf(stderr, "No existe la cola solicitida \n");
 		return NULL;
     }
