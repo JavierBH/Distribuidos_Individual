@@ -78,7 +78,7 @@ int create_socket(){
 int send_cabecera(int s, char *op, char *name_cola){
     struct iovec iov[3];
     int size;
-    size = sizeof(name_cola);
+    size = strlen(name_cola);
     //Codigo de operacion
     iov[0].iov_base = op; 
     iov[0].iov_len = strlen(op);
@@ -98,7 +98,7 @@ int send_cabecera(int s, char *op, char *name_cola){
 int send_put(int s, char *op, char *name_cola,char *mensaje,int tam){
     struct iovec iov[5];
     int size;
-    size = sizeof(name_cola);
+    size = strlen(name_cola);
     //Codigo de operacion
     iov[0].iov_base = op; 
     iov[0].iov_len = strlen(op);
@@ -177,7 +177,7 @@ int put(const char *cola, const void *mensaje, uint32_t tam) {
         perror("Error en el envio del codigo");
         return -1;
     }
-    
+
     return recv_response(s);
 }
 

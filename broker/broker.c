@@ -175,6 +175,7 @@ int main(int argc, char *argv[]) {
 			return -1;
 		}
 		//Se reserva tamaño para el nombre de la cola
+		fprintf(stderr,"%d",size_name);
 		name_cola=malloc(size_name);
 		//Se recibe el nombre de la cola
 		if(read(s_conec,name_cola,size_name)<0){
