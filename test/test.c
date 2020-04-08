@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
                 case 'G': 
                 case 'B': ;
                     uint32_t tam;
-                    void *mensaje;
+                    void *mensaje;                    
                     if (get(cola, &mensaje, &tam, (op[0]=='B')?true:false)<0)
                         printf("error leyendo de la cola %s\n", cola);
                     else {
@@ -66,6 +66,7 @@ int main(int argc, char *argv[]) {
                     fstat(fd, &st);
                     f=mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
                     close(fd);
+
                     if (put(cola, f, st.st_size)<0)
                         printf("error escribiendo en la cola %s\n", cola);
                     else
