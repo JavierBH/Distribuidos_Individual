@@ -113,7 +113,7 @@ int send_put(int s, char *op, char *name_cola,char *mensaje,int tam){
     iov[3].iov_len = sizeof(tam);
     //Mensaje
     iov[4].iov_base = mensaje; 
-    iov[4].iov_len = sizeof(mensaje);
+    iov[4].iov_len = tam;
     if(writev(s,iov,5)<0){
           perror("Error en el envio de la cabecera");
     	  return -1;
@@ -195,15 +195,10 @@ int get(const char *cola, void **mensaje, uint32_t *tam, bool blocking) {
         return -1;
     }
 
-    if(send_tam(s,*tam)<0){
-        perror("Error en el envio del tamaño");
-        return -1;
-    }
-
     if((*mensaje=recv_message(s))==NULL){
         perror("Error en la llegada de la respuesta");
         return -1;
     }
-
+    *tam = strlen(*mensaje)+1;
     return 0;
 }

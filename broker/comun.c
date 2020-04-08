@@ -57,7 +57,7 @@ int send_message(int s, char *msg,uint32_t tam){
     iov[0].iov_len = sizeof(tam);
     //Mensaje
     iov[1].iov_base = msg; 
-    iov[1].iov_len = strlen(msg);
+    iov[1].iov_len = tam;
     if(writev(s,iov,2)<0){
         perror("Error en el envio del mensaje");
         return -1;

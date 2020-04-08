@@ -84,18 +84,20 @@ int escritura_mensaje(struct diccionario *d,char *cola, void *mensaje){
 
  //   Esta funcion se ejectua cuando llega la orden de leer un mensaje
 
-char *lectura_mensaje(struct diccionario *d, char *cola){
+char *lectura_mensaje(struct diccionario *d, char *cola, char *msg){
 	int error;
     struct cola *c;
-	char *msg;
+	char *aux;
     c = dic_get(d,cola,&error);
 	if(error<0){
         fprintf(stderr, "No existe la cola solicitida \n");
 		return NULL;
     }
-	msg = cola_pop_front(c,&error);
-
-	return msg;
+	aux = cola_pop_front(c,&error);
+	fprintf(stderr,"mensaje: %s\n",aux);
+	fprintf(stderr,"%d",strlen(aux));
+	msg = malloc(strlen(aux)+1);
+	return aux;
 }
 
 int recv_tam(int s){
@@ -212,22 +214,13 @@ int main(int argc, char *argv[]) {
 		case '3': //get
 			free(op);
 			char *msg;
-			int size;
-			if((size=recv_tam(s_conec))<0){
-				send_response(s_conec,-1);
-				perror("Error en el envio de la respuesta");
-				break;
-			}
-			
-			msg = malloc(size);
-			if((msg = lectura_mensaje(d,name_cola))==NULL){
+
+			if((msg = lectura_mensaje(d,name_cola,msg))==NULL){
 				perror("Error en la lectura del mensaje");
-				send_message(s_conec,NULL,sizeof(msg));
+				send_message(s_conec,NULL,1);
 				break;
 			}
-
-			send_message(s_conec,msg,sizeof(msg));
-
+			send_message(s_conec,msg,strlen(msg)+1);
 			free(msg);
 			break;
 		default:
