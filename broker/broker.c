@@ -213,30 +213,21 @@ int main(int argc, char *argv[]) {
 			free(op);
 			char *msg;
 			int size;
-			send_response(s_conec,0);
 			if((size=recv_tam(s_conec))<0){
 				send_response(s_conec,-1);
 				perror("Error en el envio de la respuesta");
 				break;
 			}
-			send_response(s_conec,0);
+			
 			msg = malloc(size);
 			if((msg = lectura_mensaje(d,name_cola))==NULL){
 				perror("Error en la lectura del mensaje");
-				send_message(s_conec,"",sizeof(msg));
-				send_response(s_conec,-1);
+				send_message(s_conec,NULL,sizeof(msg));
 				break;
 			}
 
 			send_message(s_conec,msg,sizeof(msg));
-			
-			if(recv_response(s_conec)<0){
-     		   perror("Error en la llegada de la respuesta");
-        	   send_response(s_conec,-1);
-			   break;
-    		}
 
-			send_response(s_conec,0);
 			free(msg);
 			break;
 		default:

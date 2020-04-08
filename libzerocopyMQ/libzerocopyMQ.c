@@ -195,31 +195,15 @@ int get(const char *cola, void **mensaje, uint32_t *tam, bool blocking) {
         return -1;
     }
 
-    if(recv_response(s)<0){
-        perror("Error en la llegada de la respuesta");
-        return -1;
-    }
-    
     if(send_tam(s,*tam)<0){
         perror("Error en el envio del tamaño");
         return -1;
     }
 
-    if(recv_response(s)<0){
+    if((*mensaje=recv_message(s))==NULL){
         perror("Error en la llegada de la respuesta");
         return -1;
     }
 
-    if((*mensaje=recv_message(s))<0){
-        perror("Error en la llegada de la respuesta");
-        send_response(s,-1);
-        return -1;
-    }
-
-    if(send_response(s,0)<0){
-        perror("Error en el envio de la respuesta");
-        return -1;
-    }
-
-    return recv_response(s);
+    return 0;
 }
