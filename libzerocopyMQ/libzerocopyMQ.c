@@ -95,6 +95,32 @@ int send_cabecera(int s, char *op, char *name_cola){
     return 0;
 }
 
+int send_put(int s, char *op, char *name_cola,char *mensaje,int tam){
+    struct iovec iov[5];
+    int size;
+    size = sizeof(name_cola);
+    //Codigo de operacion
+    iov[0].iov_base = op; 
+    iov[0].iov_len = strlen(op);
+    //Tamaño del nombre de la cola
+    iov[1].iov_base = &size;
+    iov[1].iov_len = sizeof(size);
+    //Nombre de la cola
+    iov[2].iov_base = name_cola; 
+    iov[2].iov_len = strlen(name_cola);
+    //Tamaño del mensaje
+    iov[3].iov_base = &tam;
+    iov[3].iov_len = sizeof(tam);
+    //Mensaje
+    iov[4].iov_base = mensaje; 
+    iov[4].iov_len = sizeof(mensaje);
+    if(writev(s,iov,5)<0){
+          perror("Error en el envio de la cabecera");
+    	  return -1;
+    }
+    return 0;
+}
+
 int send_tam(int s, uint32_t tam){
     struct iovec iov[1];
     iov[0].iov_base=&tam;
@@ -147,21 +173,11 @@ int put(const char *cola, const void *mensaje, uint32_t tam) {
     }
 
     op = "2";
-    if (send_cabecera(s,op,(char *)cola)<0){
+    if (send_put(s,op,(char *)cola,(char *)mensaje,tam)<0){
         perror("Error en el envio del codigo");
         return -1;
     }
     
-    if(recv_response(s)<0){
-        perror("Error en la llegada de la respuesta");
-        return -1;
-    }
-
-    if(send_message(s, (char *)mensaje,tam)<0){
-        perror("Error en el envio del fichero");
-        return -1;
-    }
-
     return recv_response(s);
 }
 

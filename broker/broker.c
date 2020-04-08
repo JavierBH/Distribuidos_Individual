@@ -20,7 +20,10 @@ void libera_cola(void *v){
 
 void libera_cola_dic(char *c, void *v){
     free(c);
-	free(v);
+	struct cola *cola = v;
+	if(cola_destroy(cola,libera_cola)<0){
+		fprintf(stderr, "Error al eliminar la cola\n");
+	}
 }
 
  /*Esta funcion se ejecuta en el caso de que se quiera crear una cola
@@ -50,11 +53,6 @@ int elimina_cola(struct diccionario *d, char *name){
 	int error;
 	if((c=dic_get(d,name,&error))==NULL){
 		fprintf(stderr, "Cola no existente\n");
-		return -1;
-	}
-
-	if(cola_destroy(c,libera_cola)<0){
-		fprintf(stderr, "Error al eliminar la cola\n");
 		return -1;
 	}
 
@@ -96,7 +94,7 @@ char *lectura_mensaje(struct diccionario *d, char *cola){
 		return NULL;
     }
 	msg = cola_pop_front(c,&error);
-	perror(msg);
+
 	return msg;
 }
 
@@ -131,6 +129,7 @@ int main(int argc, char *argv[]) {
                 perror("error en setsockopt");
                 return -1;
         }
+
 	dir.sin_addr.s_addr=INADDR_ANY;
 	dir.sin_port=htons(atoi(argv[1]));
 	dir.sin_family=PF_INET;
@@ -158,11 +157,11 @@ int main(int argc, char *argv[]) {
 			return -1;
 		}
 	//-------- AQUI ACABA EL CODIGO DEL SOCKET --------
-		int *op;
+		char *op;
 		char *name_cola;
 		int error, size_name;
 
-		op = (int*)malloc(sizeof(int));
+		op = malloc(sizeof(2));
 		//Se recibe el codigo de operacion
 		if(read(s_conec,op,1)<0){
 			perror("Error en la llegada del codigo de operacion");
@@ -176,7 +175,7 @@ int main(int argc, char *argv[]) {
 			return -1;
 		}
 		//Se reserva tamaño para el nombre de la cola
-		name_cola= (char *)malloc(size_name);
+		name_cola=malloc(size_name);
 		//Se recibe el nombre de la cola
 		if(read(s_conec,name_cola,size_name)<0){
 			perror("Error en la llegada del nombre de la cola");
@@ -193,14 +192,13 @@ int main(int argc, char *argv[]) {
 			break;
 		case '1': //Destruir Cola
 			free(op);
-			error = elimina_cola(d,name_cola);	
+			error = elimina_cola(d,name_cola);
+			free(name_cola);	
 			send_response(s_conec,error);
 			break;
 		case '2': //put
 			free(op);
 			char *mensaje;
-			//Se recibe el mensaje
-			send_response(s_conec,0);
 			if((mensaje = recv_message(s_conec))==NULL){
 				send_response(s_conec,-1);
 				perror("Error recibiendo el mensaje");
@@ -228,6 +226,7 @@ int main(int argc, char *argv[]) {
 				send_response(s_conec,-1);
 				break;
 			}
+
 			send_message(s_conec,msg,sizeof(msg));
 			
 			if(recv_response(s_conec)<0){

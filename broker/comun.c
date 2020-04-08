@@ -35,6 +35,7 @@ char *recv_message(int s){
 			close(s);
 			return NULL;
 		}
+
 	return msg;
 }
 
