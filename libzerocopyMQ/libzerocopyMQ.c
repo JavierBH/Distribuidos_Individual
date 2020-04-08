@@ -60,6 +60,13 @@ int create_socket(){
   return s;
 }
 
+int check_name(char *cola){
+    if(strlen(cola) > pow(2,32)){
+        return -1;
+    }
+    return 0;
+}
+
 /***************************************************************************************************************
     Funcion que envia la cabecera de la operacion,  envia 3 parametros: El cdigo de la operacion, el tamaño del
          nombre de la cola y el nombre de la cola 
@@ -78,6 +85,11 @@ int create_socket(){
 int send_cabecera(int s, char *op, char *name_cola){
     struct iovec iov[3];
     int size;
+    
+    if(check_name(name_cola)<0){
+        return -1;
+    }
+
     size = strlen(name_cola);
     //Codigo de operacion
     iov[0].iov_base = op; 
@@ -98,6 +110,9 @@ int send_cabecera(int s, char *op, char *name_cola){
 int send_put(int s, char *op, char *name_cola,char *mensaje,int tam){
     struct iovec iov[5];
     int size;
+    if(check_name(name_cola)<0){
+        return -1;
+    }
     size = strlen(name_cola);
     //Codigo de operacion
     iov[0].iov_base = op; 
@@ -135,10 +150,12 @@ int send_tam(int s, uint32_t tam){
 int createMQ(const char *cola) {
     int s;
     char *op;
+    
     if((s = create_socket())<0){
         perror("error creando el socket");
         return -1;
     }
+     
     op = "0";
     if (send_cabecera(s,op,(char *)cola)<0){
         perror("Error en el envio del codigo");

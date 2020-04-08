@@ -214,7 +214,6 @@ int main(int argc, char *argv[]) {
 		case '3': //get
 			free(op);
 			char *msg;
-
 			if((msg = lectura_mensaje(d,name_cola,msg))==NULL){
 				perror("Error en la lectura del mensaje");
 				send_message(s_conec,NULL,1);
