@@ -26,7 +26,7 @@
     Funcion que manda el codigo de operacion. Recibe el socket y el codigo
     Retorna 0 si es correcto y -1 si hay algun error
 */
-char *recv_message(int s);
+
 int send_message(int s, char *msg,uint32_t tam);
 //Funcion que devuelve al cliente 0 si la operacion ha sido correcta y -1 si ha sido incrorecta.  
 int send_response(int s,int code);

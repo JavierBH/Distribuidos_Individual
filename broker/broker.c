@@ -13,6 +13,10 @@
 #define TAM 1024
 
    // Funcion que libera la estructura de datos de la cola
+struct mensaje_cola{
+	int size;
+	char * mensaje;
+};
 
 void libera_cola(void *v){
 	free(v);
@@ -63,19 +67,53 @@ int elimina_cola(struct diccionario *d, char *name){
 	return 0;
 }
 
-    //Esta funcion se ejectua cuando lelga la orden de añadir un mensaje a la cola corresponiente
+//Fucnion que recive el mensaje
+struct mensaje_cola *recv_message(int s){
+	int tam;
+	char *msg;
+    struct mensaje_cola *res;
+	res = malloc(sizeof(struct mensaje_cola));
+	tam = malloc(sizeof(uint32_t));
+		//Se recibe el tamaño del mensaje
+		if(read(s,&tam,sizeof(uint32_t))<0){
+			perror("Error en la llegada del codigo de operacion");
+            res->size=0;
+            res->mensaje = NULL;
+			return res;
+		}
 
-int escritura_mensaje(struct diccionario *d,char *cola, void *mensaje){
+    res->size = tam;
+	
+    msg = (char*)malloc(tam);
+	//Se recibe el codigo de operacion
+		if(read(s,msg,tam)<0){
+			perror("Error en la llegada del codigo de operacion");
+			res->size=0;
+            res->mensaje = NULL;
+			return res;
+		}
+
+    res->mensaje = msg;
+	return res;
+}
+
+    //Esta funcion se ejectua cuando llega la orden de añadir un mensaje a la cola corresponiente
+
+int escritura_mensaje(struct diccionario *d,char *cola, struct mensaje_cola *msg){
     int error ;
     struct cola *c;
     c = dic_get(d,cola,&error);
+	if(msg->mensaje == NULL){
+		perror("Error recibiendo el mensaje");
+		return -1;
+	}
 
     if(error<0){
         perror("No existe la cola solicitida \n");
 		return -1;
     }
 
-   if(cola_push_back(c,mensaje)<0){
+   if(cola_push_back(c,&msg)<0){
        perror("Error al introducir el mensaje en la cola solicitada \n");
 	   return -1;
    }
@@ -84,20 +122,15 @@ int escritura_mensaje(struct diccionario *d,char *cola, void *mensaje){
 
  //   Esta funcion se ejectua cuando llega la orden de leer un mensaje
 
-char *lectura_mensaje(struct diccionario *d, char *cola, char *msg){
+struct mensaje_cola *lectura_mensaje(struct diccionario *d, char *cola){
 	int error;
     struct cola *c;
-	char *aux;
     c = dic_get(d,cola,&error);
 	if(error<0){
         fprintf(stderr, "No existe la cola solicitida \n");
 		return NULL;
     }
-	aux = cola_pop_front(c,&error);
-	fprintf(stderr,"mensaje: %s\n",aux);
-	fprintf(stderr,"%d",strlen(aux));
-	msg = malloc(strlen(aux)+1);
-	return aux;
+	return cola_pop_front(c,&error);
 }
 
 int recv_tam(int s){
@@ -201,26 +234,22 @@ int main(int argc, char *argv[]) {
 			break;
 		case '2': //put
 			free(op);
-			char *mensaje;
-			if((mensaje = recv_message(s_conec))==NULL){
-				send_response(s_conec,-1);
-				perror("Error recibiendo el mensaje");
-				break;
-			}
+			struct mensaje_cola *mensaje;
+			mensaje = recv_message(s_conec);
 			error = escritura_mensaje(d,name_cola,mensaje);	
 			// Se envia la respuesta del mensaje
 			send_response(s_conec,error);
 			break;
 		case '3': //get
 			free(op);
-			char *msg;
-			if((msg = lectura_mensaje(d,name_cola,msg))==NULL){
+			struct mensaje_cola *msg_put;
+			if((msg_put = lectura_mensaje(d,name_cola))==NULL){
 				perror("Error en la lectura del mensaje");
 				send_message(s_conec,NULL,1);
 				break;
 			}
-			send_message(s_conec,msg,strlen(msg)+1);
-			free(msg);
+			send_message(s_conec,msg_put->mensaje,msg_put->size);
+			free(msg_put);
 			break;
 		default:
 			perror("Error en el codigo de operacion");

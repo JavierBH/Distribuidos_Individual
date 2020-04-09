@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <sys/uio.h>
 #include <string.h>
+#include <math.h>
 #define TAM 1024
 
 /**************************************************************************************************************
@@ -136,6 +137,31 @@ int send_put(int s, char *op, char *name_cola,char *mensaje,int tam){
     return 0;
 }
 
+//Fucnion que recive el mensaje
+
+int recv_tam(int s){
+    int tam;
+	tam = malloc(sizeof(uint32_t));
+		//Se recibe el tamaño del mensaje
+		if(read(s,&tam,sizeof(uint32_t))<0){
+			perror("Error en la llegada del codigo de operacion");
+			return -1;
+		}
+    return tam;
+}
+
+char * recv_message(int s,int tam){
+	char *msg;
+    msg = (char*)malloc(tam);
+	//Se recibe el codigo de operacion
+		if(read(s,msg,tam)<0){
+			perror("Error en la llegada del codigo de operacion");
+			return NULL;
+		}
+
+	return msg;
+}
+
 int send_tam(int s, uint32_t tam){
     struct iovec iov[1];
     iov[0].iov_base=&tam;
@@ -211,11 +237,14 @@ int get(const char *cola, void **mensaje, uint32_t *tam, bool blocking) {
         perror("Error en el envio del codigo");
         return -1;
     }
-
-    if((*mensaje=recv_message(s))==NULL){
+    if((*tam = recv_tam(s))<0){
+        perror("Error en la llegada del tamaño");
+        return -1;
+    }
+    if((*mensaje=recv_message(s,*tam))==NULL){
         perror("Error en la llegada de la respuesta");
         return -1;
     }
-    *tam = strlen(*mensaje)+1;
+    
     return 0;
 }

@@ -16,28 +16,10 @@
 #include <sys/uio.h>
 #include <string.h>
 
-//Fucnion que recive el mensaje
-char *recv_message(int s){
-	int tam;
-	char *msg;
-	tam = malloc(sizeof(uint32_t));
-		//Se recibe el tamaño del mensaje
-		if(read(s,&tam,sizeof(uint32_t))<0){
-			perror("Error en la llegada del codigo de operacion");
-			close(s);
-			return NULL;
-		}
-
-	msg = (char*)malloc(tam);
-	//Se recibe el codigo de operacion
-		if(read(s,msg,tam)<0){
-			perror("Error en la llegada del codigo de operacion");
-			close(s);
-			return NULL;
-		}
-
-	return msg;
-}
+struct mensaje_cola{
+	int size;
+	char * mensaje;
+};
 
 
 /***************************************************************************************************************
