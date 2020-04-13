@@ -83,14 +83,18 @@ int check_name(char *cola){
     Devuelve 0 en caso de que no haya errores y -1 en caso de que los haya
 ****************************************************************************************************************/
 
-int send_cabecera(int s, char *op, char *name_cola){
-    struct iovec iov[3];
+int send_cabecera(int s, char *op, char *name_cola, int b){
+    struct iovec iov[4];
     int size;
-    
+    char * blook;
     if(check_name(name_cola)<0){
         return -1;
     }
-
+    if(b > 0){
+        blook="1";
+    }else{
+        blook="0";
+    }
     size = strlen(name_cola);
     //Codigo de operacion
     iov[0].iov_base = op; 
@@ -101,18 +105,27 @@ int send_cabecera(int s, char *op, char *name_cola){
     //Nombre de la cola
     iov[2].iov_base = name_cola; 
     iov[2].iov_len = strlen(name_cola);
-    if(writev(s,iov,3)<0){
+    //Get bloqueante
+    iov[3].iov_base = blook;
+    iov[3].iov_len = strlen(blook);
+    if(writev(s,iov,4)<0){
           perror("Error en el envio de la cabecera");
     	  return -1;
     }
     return 0;
 }
 
-int send_put(int s, char *op, char *name_cola,char *mensaje,int tam){
-    struct iovec iov[5];
+int send_put(int s, char *op, char *name_cola,char *mensaje,int tam,int b){
+    struct iovec iov[6];
     int size;
+    char * blook;
     if(check_name(name_cola)<0){
         return -1;
+    }
+    if(b > 0){
+        blook="1";
+    }else{
+        blook="0";
     }
     size = strlen(name_cola);
     //Codigo de operacion
@@ -124,13 +137,16 @@ int send_put(int s, char *op, char *name_cola,char *mensaje,int tam){
     //Nombre de la cola
     iov[2].iov_base = name_cola; 
     iov[2].iov_len = strlen(name_cola);
+    //Get bloqueante
+    iov[3].iov_base = blook;
+    iov[3].iov_len = strlen(blook);
     //Tamaño del mensaje
-    iov[3].iov_base = &tam;
-    iov[3].iov_len = sizeof(tam);
+    iov[4].iov_base = &tam;
+    iov[4].iov_len = sizeof(tam);
     //Mensaje
-    iov[4].iov_base = mensaje; 
-    iov[4].iov_len = tam;
-    if(writev(s,iov,5)<0){
+    iov[5].iov_base = mensaje; 
+    iov[5].iov_len = tam;
+    if(writev(s,iov,6)<0){
           perror("Error en el envio de la cabecera");
     	  return -1;
     }
@@ -183,7 +199,7 @@ int createMQ(const char *cola) {
     }
      
     op = "0";
-    if (send_cabecera(s,op,(char *)cola)<0){
+    if (send_cabecera(s,op,(char *)cola,0)<0){
         perror("Error en el envio del codigo");
         return -1;
     }
@@ -199,7 +215,7 @@ int destroyMQ(const char *cola){
     }
 
     op = "1";
-    if (send_cabecera(s,op,(char *)cola)<0){
+    if (send_cabecera(s,op,(char *)cola,0)<0){
         perror("Error en el envio del codigo");
         return -1;
     }
@@ -216,7 +232,7 @@ int put(const char *cola, const void *mensaje, uint32_t tam) {
     }
 
     op = "2";
-    if (send_put(s,op,(char *)cola,(char *)mensaje,tam)<0){
+    if (send_put(s,op,(char *)cola,(char *)mensaje,tam,0)<0){
         perror("Error en el envio del codigo");
         return -1;
     }
@@ -233,7 +249,7 @@ int get(const char *cola, void **mensaje, uint32_t *tam, bool blocking) {
     }
 
     op = "3";
-    if (send_cabecera(s,op,(char *)cola)<0){
+    if (send_cabecera(s,op,(char *)cola,blocking)<0){
         perror("Error en el envio del codigo");
         return -1;
     }
@@ -246,5 +262,9 @@ int get(const char *cola, void **mensaje, uint32_t *tam, bool blocking) {
         return -1;
     }
     
+    if(strncmp(*mensaje,"ERROR",5)==0){
+        perror("LA cola no existe"); //Este error solo salta si hay un error en el get bloqueante
+        return -1;
+    }
     return 0;
 }
