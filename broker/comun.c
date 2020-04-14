@@ -41,7 +41,6 @@ int send_message(int s, char *msg,uint32_t tam){
     iov[1].iov_base = msg; 
     iov[1].iov_len = tam;
     if(writev(s,iov,2)<0){
-        perror("Error en el envio del mensaje");
         return -1;
     }
     return 0;
@@ -57,7 +56,6 @@ int send_response(int s,int code){
 		response = "1";
 	}
 	if(send(s,response,sizeof(response),0)<0){
-		perror("Error en el envio del codigo");
 		return -1;
 	}
 	return 0;
@@ -74,7 +72,6 @@ int recv_response(int s){
     char *code;
     code = (char *)malloc(2);
     if (recv(s,code,sizeof(code),0)<0){
-        perror("Error en la respuesta");
         return -1;
     } 
 

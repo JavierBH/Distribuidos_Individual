@@ -25,24 +25,21 @@ void libera_cola(void *v){
 void libera_cola_dic(char *c, void *v){
     free(c);
 	struct cola *cola = v;
-	if(cola_destroy(cola,libera_cola)<0){
-		fprintf(stderr, "Error al eliminar la cola\n");
-	}
+	cola_destroy(cola,libera_cola);
 }
 
  /*Esta funcion se ejecuta en el caso de que se quiera crear una cola
     Añade la cola al diccionario, asignandole un valor de la cola, ya que se encuentra vacia. DE la siguiente manera:
-    Name_cola : struct cola*/
+    Name_cola : struct cola
+	*/
 
 int crea_cola(struct diccionario *d, char *name){
 	struct cola *c;
 	if((c = cola_create())==NULL){
-		perror("Error creando la cola");
 		return -1;
 	}
 
  if (dic_put(d, name, c) < 0){
-        fprintf(stderr, "Cola duplicada \n");
 		return -1;
 	}
 	return 0;
@@ -56,12 +53,10 @@ int elimina_cola(struct diccionario *d, char *name){
 	struct cola *c;
 	int error;
 	if((c=dic_get(d,name,&error))==NULL){
-		fprintf(stderr, "Cola no existente\n");
 		return -1;
 	}
 
 	if (dic_remove_entry(d,name, libera_cola_dic) < 0){
-    	    fprintf(stderr, "Error al eliminar la cola\n");
 			return -1;
 	}
 	return 0;
@@ -76,7 +71,6 @@ struct mensaje_cola *recv_message(int s){
 	tam = malloc(sizeof(uint32_t));
 		//Se recibe el tamaño del mensaje
 		if(read(s,tam,sizeof(uint32_t))<0){
-			perror("Error en la llegada del codigo de operacion");
             res->size=0;
             res->mensaje = NULL;
 			return res;
@@ -87,7 +81,6 @@ struct mensaje_cola *recv_message(int s){
     msg = (char*)malloc(*tam);
 	//Se recibe el codigo de operacion
 		if(read(s,msg,*tam)<0){
-			perror("Error en la llegada del codigo de operacion");
 			res->size=0;
             res->mensaje = NULL;
 			return res;
@@ -104,17 +97,14 @@ int escritura_mensaje(struct diccionario *d,char *cola, struct mensaje_cola *msg
     struct cola *c;
     c = dic_get(d,cola,&error);
 	if(msg->mensaje == NULL){
-		perror("Error recibiendo el mensaje");
 		return -1;
 	}
 
     if(error<0){
-        perror("No existe la cola solicitida \n");
 		return -1;
     }
 
    if(cola_push_back(c,msg)<0){
-       perror("Error al introducir el mensaje en la cola solicitada \n");
 	   return -1;
    }
    return 0;
@@ -127,7 +117,6 @@ struct mensaje_cola *lectura_mensaje(struct diccionario *d, char *cola){
     struct cola *c;
     c = dic_get(d,cola,&error);
 	if(error<0){
-        fprintf(stderr, "No existe la cola solicitida \n");
 		return NULL;
     }
 	return cola_pop_front(c,&error);
@@ -136,7 +125,6 @@ struct mensaje_cola *lectura_mensaje(struct diccionario *d, char *cola){
 int recv_tam(int s){
 	int tam;
 	if(read(s,&tam,sizeof(int))<0){
-			perror("Error en la llegada del codigo de operacion");
 			close(s);
 			return -1;
 		}
@@ -150,7 +138,6 @@ int delete_get_cola(struct diccionario *d,char *cola){
 	int *s_conec;
     c = dic_get(d,cola,&error);
 	if(error<0){
-        fprintf(stderr, "No existe la cola solicitida \n");
 		return -1;
     }
 	
@@ -158,6 +145,7 @@ int delete_get_cola(struct diccionario *d,char *cola){
 	//Se manda un mensaje a cada uno de los clientes que estaban esperando
 	while((s_conec = cola_pop_front(c,&error))!= NULL && error>0 ){
 		send_message(*s_conec,msg,strlen(msg));
+		close(*s_conec);
 		free(s_conec);
 	}
 	//Se elimina la cola
@@ -168,7 +156,6 @@ int delete_get_cola(struct diccionario *d,char *cola){
 int send_mensaje_get(int s_conec,struct diccionario *d, char *name_cola){
 		struct mensaje_cola *msg_put;
 			if((msg_put = lectura_mensaje(d,name_cola))==NULL){
-				perror("Error en la lectura del mensaje");
 				send_message(s_conec,NULL,1);
 				return -1;
 			}
@@ -184,16 +171,15 @@ int mensaje_get(struct diccionario *dic_mensajes, struct diccionario *dic_get_b,
 	int *s_conec;
 	c = dic_get(dic_get_b,cola,&error);
 	if(error<0){
-        fprintf(stderr, "No existe la cola solicitida \n");
 		return -1;
     }
 	s_conec = cola_pop_front(c,&error);
 	if(error<0){
+		close(*s_conec);
         //No hay elementos en la cola, por lo que no es necesario mandar el mensaje
 		return 0;
     }
 	//Se envia el mensaje
-	fprintf(stderr,"%d\n",*s_conec);
 	return send_mensaje_get(*s_conec,dic_mensajes,cola);
 }
 
@@ -205,13 +191,11 @@ int get_bloqueante(int s_conec,struct diccionario *d, char * cola){
     c = dic_get(d,cola,&error);
 
     if(error<0){
-        perror("No existe la cola solicitida \n");
 		return -1;
     }
 	s = malloc(sizeof(int));
 	*s = s_conec;
    if(cola_push_back(c,s)<0){
-       perror("Error al introducir el mensaje en la cola solicitada \n");
 	   return -1;
    }
    return 0;
@@ -243,13 +227,11 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 	if ((s=socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-		perror("error creando socket");
 		return -1;
 	}
 		
 	/* Para reutilizar puerto inmediatamente */
         if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opcion, sizeof(opcion))<0){
-                perror("error en setsockopt");
                 return -1;
         }
 
@@ -257,24 +239,20 @@ int main(int argc, char *argv[]) {
 	dir.sin_port=htons(atoi(argv[1]));
 	dir.sin_family=PF_INET;
 	if (bind(s, (struct sockaddr *)&dir, sizeof(dir)) < 0) {
-		perror("error en bind");
 		close(s);
 		return -1;
 	}
 	if (listen(s, 5) < 0) {
-		perror("error en listen");
 		close(s);
 		return -1;
 	}
 
 	if((d = dic_create())==NULL){
-		perror("Error al crear el diccionario");
 		close(s);
 		return -1;
 	}
 
 	if((d_get_bloq = dic_create())==NULL){
-		perror("Error al crear el diccionario");
 		close(s);
 		return -1;
 	}
@@ -283,7 +261,6 @@ int main(int argc, char *argv[]) {
 		tam_dir=sizeof(dir);
 		
 		if ((s_conec=accept(s, (struct sockaddr *)&dir, &tam_dir))<0){
-			perror("error en accept");
 			close(s);
 			return -1;
 		}
@@ -295,13 +272,11 @@ int main(int argc, char *argv[]) {
 		op = malloc(sizeof(2));
 		//Se recibe el codigo de operacion
 		if(read(s_conec,op,1)<0){
-			perror("Error en la llegada del codigo de operacion");
 			close(s);
 			return -1;
 		}
 		//Se recibe el tamaño del nombre de la cola
 		if(read(s_conec,&size_name,sizeof(int))<0){
-			perror("Error en la llegada del tamaño de la cola");
 			close(s);
 			return -1;
 		}
@@ -309,13 +284,11 @@ int main(int argc, char *argv[]) {
 		name_cola=malloc(size_name);
 		//Se recibe el nombre de la cola
 		if(read(s_conec,name_cola,size_name)<0){
-			perror("Error en la llegada del nombre de la cola");
 			close(s);
 			return -1;
 		}
 		b = malloc(2);
 		if(read(s_conec,b,1)<0){
-			perror("Error en la llegada del flag de bloqueo");
 			close(s);
 			return -1;
 		}
@@ -352,10 +325,12 @@ int main(int argc, char *argv[]) {
 			send_mensaje_get(s_conec,d,name_cola);
 			break;
 		default:
-			perror("Error en el codigo de operacion");
 			free(op);
 			close(s_conec);
 			break;
+		}
+		if(strncmp(b,"1",1)!=0){
+			close(s_conec);
 		}
 	}
 	close(s);

@@ -25,28 +25,24 @@ int create_socket(){
     char *host; // Host name
     char *port; // Host port
 	if ((s=socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-		perror("error creando socket");
 		return -1;
 	}
 
     //Se obtiene el host del broker
     host = getenv("BROKER_HOST");
     if(host == NULL){
-        perror("Error en la variable del HOST\n");
         return -1;
     }
 
    
 	host_info=gethostbyname(host);
 	if(host_info == NULL){
-        perror("La dirección IP del host es errónea\n");
         return -1;
     }
 
     // Se obtiene el puerto del broker
     port = getenv("BROKER_PORT");
     if(port == NULL){
-        perror("El puerto del host es erróneo\n");
         return -1;
     }
 
@@ -54,7 +50,6 @@ int create_socket(){
 	dir.sin_port=htons(atoi(port));
 	dir.sin_family=PF_INET;
 	if ((s_connect = connect(s, (struct sockaddr *)&dir, sizeof(dir))) < 0) {
-		perror("error en connect");
 		close(s);
 		return -1;
 	}
@@ -109,8 +104,8 @@ int send_cabecera(int s, char *op, char *name_cola, int b){
     iov[3].iov_base = blook;
     iov[3].iov_len = strlen(blook);
     if(writev(s,iov,4)<0){
-          perror("Error en el envio de la cabecera");
-    	  return -1;
+        close(s);
+    	return -1;
     }
     return 0;
 }
@@ -120,6 +115,7 @@ int send_put(int s, char *op, char *name_cola,char *mensaje,int tam,int b){
     int size;
     char * blook;
     if(check_name(name_cola)<0){
+        close(s);
         return -1;
     }
     if(b > 0){
@@ -147,8 +143,8 @@ int send_put(int s, char *op, char *name_cola,char *mensaje,int tam,int b){
     iov[5].iov_base = mensaje; 
     iov[5].iov_len = tam;
     if(writev(s,iov,6)<0){
-          perror("Error en el envio de la cabecera");
-    	  return -1;
+        close(s);
+    	return -1;
     }
     return 0;
 }
@@ -160,7 +156,7 @@ int recv_tam(int s){
 	tam = malloc(sizeof(uint32_t));
 		//Se recibe el tamaño del mensaje
 		if(read(s,&tam,sizeof(uint32_t))<0){
-			perror("Error en la llegada del codigo de operacion");
+            close(s);
 			return -1;
 		}
     return tam;
@@ -171,7 +167,7 @@ char * recv_message(int s,int tam){
     msg = (char*)malloc(tam);
 	//Se recibe el codigo de operacion
 		if(read(s,msg,tam)<0){
-			perror("Error en la llegada del codigo de operacion");
+            close(s);
 			return NULL;
 		}
 
@@ -183,88 +179,91 @@ int send_tam(int s, uint32_t tam){
     iov[0].iov_base=&tam;
     iov[0].iov_len=sizeof(tam);
     if(writev(s,iov,1)<0){
-        perror("Error en el envio del mensaje");
+        close(s);
         return -1;
     }
     return 0;
 }
 
 int createMQ(const char *cola) {
-    int s;
+    int s,res;
     char *op;
     
     if((s = create_socket())<0){
-        perror("error creando el socket");
         return -1;
     }
      
     op = "0";
     if (send_cabecera(s,op,(char *)cola,0)<0){
-        perror("Error en el envio del codigo");
+        close(s);
         return -1;
     }
-    return recv_response(s);
+    res = recv_response(s);
+    close(s);
+    return res;
 }
 
 int destroyMQ(const char *cola){
-    int s;
+    int s,res;
     char *op;
     if((s = create_socket())<0){
-        perror("error creando el socket");
         return -1;
     }
 
     op = "1";
     if (send_cabecera(s,op,(char *)cola,0)<0){
-        perror("Error en el envio del codigo");
+        close(s);
         return -1;
     }
     
-    return recv_response(s);
+    res = recv_response(s);
+    close(s);
+    return res;
 }
 
 int put(const char *cola, const void *mensaje, uint32_t tam) {
-    int s;
+    int s, res;
     char *op;
     if((s = create_socket())<0){
-        perror("error creando el socket");
         return -1;
     }
 
     op = "2";
     if (send_put(s,op,(char *)cola,(char *)mensaje,tam,0)<0){
-        perror("Error en el envio del codigo");
+        close(s);
         return -1;
     }
 
-    return recv_response(s);
+    res = recv_response(s);
+    close(s);
+    return res;
 }
 
 int get(const char *cola, void **mensaje, uint32_t *tam, bool blocking) {
     int s;
     char *op;
     if((s = create_socket())<0){
-        perror("error creando el socket");
         return -1;
     }
 
     op = "3";
     if (send_cabecera(s,op,(char *)cola,blocking)<0){
-        perror("Error en el envio del codigo");
+        close(s);
         return -1;
     }
     if((*tam = recv_tam(s))<0){
-        perror("Error en la llegada del tamaño");
+        close(s);
         return -1;
     }
     if((*mensaje=recv_message(s,*tam))==NULL){
-        perror("Error en la llegada de la respuesta");
+        close(s);
         return -1;
     }
     
     if(strncmp(*mensaje,"ERROR",5)==0){
-        perror("LA cola no existe"); //Este error solo salta si hay un error en el get bloqueante
+        close(s);
         return -1;
     }
+    close(s);
     return 0;
 }
