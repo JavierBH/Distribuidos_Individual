@@ -175,7 +175,7 @@ int mensaje_get(struct diccionario *dic_mensajes, struct diccionario *dic_get_b,
     }
 	s_conec = cola_pop_front(c,&error);
 	if(error<0){
-		close(*s_conec);
+		//lala
         //No hay elementos en la cola, por lo que no es necesario mandar el mensaje
 		return 0;
     }
@@ -223,7 +223,6 @@ int main(int argc, char *argv[]) {
 	int opcion=1;
 
 	if (argc!=2) {
-		fprintf(stderr, "Uso: %s puerto\n", argv[0]);
 		return -1;
 	}
 	if ((s=socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
