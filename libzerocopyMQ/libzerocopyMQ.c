@@ -90,7 +90,7 @@ int send_cabecera(int s, char *op, char *name_cola, int b){
     }else{
         blook="0";
     }
-    size = strlen(name_cola);
+    size = strlen(name_cola)+1;
     //Codigo de operacion
     iov[0].iov_base = op; 
     iov[0].iov_len = strlen(op)+1;

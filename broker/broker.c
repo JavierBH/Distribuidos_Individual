@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
 
 		op = malloc(2);
 		//Se recibe el codigo de operacion
-		if(read(s_conec,op,1)<0){
+		if(read(s_conec,op,2)<0){
 			close(s);
 			return -1;
 		}
@@ -285,7 +285,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		b = malloc(2);
-		if(recv(s_conec,b,1,MSG_WAITALL)<0){
+		if(recv(s_conec,b,2,MSG_WAITALL)<0){
 			close(s);
 			return -1;
 		}

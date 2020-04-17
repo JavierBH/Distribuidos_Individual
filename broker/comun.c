@@ -55,7 +55,7 @@ int send_response(int s,int code){
 	}else{
 		response = "1";
 	}
-	if(send(s,response,sizeof(response),0)<0){
+	if(send(s,response,strlen(response)+1,0)<0){
 		return -1;
 	}
 	return 0;
@@ -71,7 +71,7 @@ int recv_response(int s){
 
     char *code;
     code = (char *)malloc(2);
-    if (recv(s,code,sizeof(code),0)<0){
+    if (recv(s,code,2,0)<0){
         return -1;
     } 
 
