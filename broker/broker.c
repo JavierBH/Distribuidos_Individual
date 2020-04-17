@@ -23,9 +23,11 @@ void libera_cola(void *v){
 }
 
 void libera_cola_dic(char *c, void *v){
-    free(c);
-	struct cola *cola = v;
+ 	struct cola *cola;
+	cola = v;
 	cola_destroy(cola,libera_cola);
+	 free(c);
+	
 }
 
  /*Esta funcion se ejecuta en el caso de que se quiera crear una cola
@@ -35,10 +37,10 @@ void libera_cola_dic(char *c, void *v){
 
 int crea_cola(struct diccionario *d, char *name){
 	struct cola *c;
+	fprintf(stderr,"Se crea la cola: %s\n",name);
 	if((c = cola_create())==NULL){
 		return -1;
 	}
-
  if (dic_put(d, name, c) < 0){
 		return -1;
 	}
@@ -50,12 +52,7 @@ Busca en el diccionario la cola que se quiere eliminar y si existe la borra, jun
 En caso de que no exista da un error*/
 
 int elimina_cola(struct diccionario *d, char *name){
-	struct cola *c;
-	int error;
-	if((c=dic_get(d,name,&error))==NULL){
-		return -1;
-	}
-
+	fprintf(stderr,"Se destruye la cola: %s\n",name);
 	if (dic_remove_entry(d,name, libera_cola_dic) < 0){
 			return -1;
 	}
@@ -268,43 +265,43 @@ int main(int argc, char *argv[]) {
 		char *name_cola;
 		int error, size_name;
 
-		op = malloc(sizeof(2));
+		op = malloc(2);
 		//Se recibe el codigo de operacion
 		if(read(s_conec,op,1)<0){
 			close(s);
 			return -1;
 		}
 		//Se recibe el tamaño del nombre de la cola
-		if(read(s_conec,&size_name,sizeof(int))<0){
+		if(recv(s_conec,&size_name,sizeof(int),MSG_WAITALL)<0){
 			close(s);
 			return -1;
 		}
 		//Se reserva tamaño para el nombre de la cola
 		name_cola=malloc(size_name);
 		//Se recibe el nombre de la cola
-		if(read(s_conec,name_cola,size_name)<0){
+		if(recv(s_conec,name_cola,size_name,MSG_WAITALL)<0){
 			close(s);
 			return -1;
 		}
+
 		b = malloc(2);
-		if(read(s_conec,b,1)<0){
+		if(recv(s_conec,b,1,MSG_WAITALL)<0){
 			close(s);
 			return -1;
 		}
-		//Nota: op tiene el valor en ASCII
+
 		switch (*op){
 		case '0': //Crear Cola
 			free(op);
 			error = crea_cola(d,name_cola);
 			send_response(s_conec,error);
-			crea_cola(d_get_bloq,name_cola);	//Se introduce la cola en el diccionario para el get bloqueante
+			//crea_cola(d_get_bloq,name_cola);	//Se introduce la cola en el diccionario para el get bloqueante	
 			break;
 		case '1': //Destruir Cola
 			free(op);
 			error = elimina_cola(d,name_cola);
-			free(name_cola);	
 			send_response(s_conec,error);
-			delete_get_cola(d_get_bloq,name_cola); //Se elimina la cola del get bloqueante
+		//	delete_get_cola(d_get_bloq,name_cola); //Se elimina la cola del get bloqueante
 			break;
 		case '2': //put
 			free(op);
@@ -313,7 +310,7 @@ int main(int argc, char *argv[]) {
 			error = escritura_mensaje(d,name_cola,mensaje);	
 			// Se envia la respuesta del mensaje
 			send_response(s_conec,error);
-			mensaje_get(d,d_get_bloq,name_cola); //Se envia el mensaje al get bloqueante	
+		//	mensaje_get(d,d_get_bloq,name_cola); //Se envia el mensaje al get bloqueante	
 			break;
 		case '3': //get
 			free(op);
@@ -325,12 +322,15 @@ int main(int argc, char *argv[]) {
 			break;
 		default:
 			free(op);
+			free(name_cola);
+			free(b);
 			close(s_conec);
 			break;
 		}
 		if(strncmp(b,"1",1)!=0){
 			close(s_conec);
 		}
+		free(b);
 	}
 	close(s);
 	return 0;
