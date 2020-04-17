@@ -123,19 +123,19 @@ int send_put(int s, char *op, char *name_cola,char *mensaje,int tam,int b){
     }else{
         blook="0";
     }
-    size = strlen(name_cola);
+    size = strlen(name_cola)+1;
     //Codigo de operacion
     iov[0].iov_base = op; 
-    iov[0].iov_len = strlen(op);
+    iov[0].iov_len = strlen(op)+1;
     //Tamaño del nombre de la cola
     iov[1].iov_base = &size;
     iov[1].iov_len = sizeof(size);
     //Nombre de la cola
     iov[2].iov_base = name_cola; 
-    iov[2].iov_len = strlen(name_cola);
+    iov[2].iov_len = strlen(name_cola)+1;
     //Get bloqueante
     iov[3].iov_base = blook;
-    iov[3].iov_len = strlen(blook);
+    iov[3].iov_len = strlen(blook)+1;
     //Tamaño del mensaje
     iov[4].iov_base = &tam;
     iov[4].iov_len = sizeof(tam);

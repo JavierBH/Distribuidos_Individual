@@ -37,11 +37,10 @@ void libera_cola_dic(char *c, void *v){
 
 int crea_cola(struct diccionario *d, char *name){
 	struct cola *c;
-	fprintf(stderr,"Se crea la cola: %s\n",name);
 	if((c = cola_create())==NULL){
 		return -1;
 	}
- if (dic_put(d, name, c) < 0){
+ 	if(dic_put(d, name, c) < 0){
 		return -1;
 	}
 	return 0;
@@ -52,7 +51,6 @@ Busca en el diccionario la cola que se quiere eliminar y si existe la borra, jun
 En caso de que no exista da un error*/
 
 int elimina_cola(struct diccionario *d, char *name){
-	fprintf(stderr,"Se destruye la cola: %s\n",name);
 	if (dic_remove_entry(d,name, libera_cola_dic) < 0){
 			return -1;
 	}
@@ -295,13 +293,13 @@ int main(int argc, char *argv[]) {
 			free(op);
 			error = crea_cola(d,name_cola);
 			send_response(s_conec,error);
-			//crea_cola(d_get_bloq,name_cola);	//Se introduce la cola en el diccionario para el get bloqueante	
+			crea_cola(d_get_bloq,name_cola);	//Se introduce la cola en el diccionario para el get bloqueante	
 			break;
 		case '1': //Destruir Cola
 			free(op);
 			error = elimina_cola(d,name_cola);
 			send_response(s_conec,error);
-		//	delete_get_cola(d_get_bloq,name_cola); //Se elimina la cola del get bloqueante
+			delete_get_cola(d_get_bloq,name_cola); //Se elimina la cola del get bloqueante
 			break;
 		case '2': //put
 			free(op);
@@ -310,10 +308,11 @@ int main(int argc, char *argv[]) {
 			error = escritura_mensaje(d,name_cola,mensaje);	
 			// Se envia la respuesta del mensaje
 			send_response(s_conec,error);
-		//	mensaje_get(d,d_get_bloq,name_cola); //Se envia el mensaje al get bloqueante	
+			mensaje_get(d,d_get_bloq,name_cola); //Se envia el mensaje al get bloqueante	
 			break;
 		case '3': //get
 			free(op);
+			fprintf(stderr,"%d\n",strncmp(b,"0",1));
 			if(strncmp(b,"1",1)==0 && check_elements(d,name_cola)<=0){
 				get_bloqueante(s_conec,d_get_bloq,name_cola);
 				break;
