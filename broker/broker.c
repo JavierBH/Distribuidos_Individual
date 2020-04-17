@@ -312,7 +312,6 @@ int main(int argc, char *argv[]) {
 			break;
 		case '3': //get
 			free(op);
-			fprintf(stderr,"%d\n",strncmp(b,"0",1));
 			if(strncmp(b,"1",1)==0 && check_elements(d,name_cola)<=0){
 				get_bloqueante(s_conec,d_get_bloq,name_cola);
 				break;
