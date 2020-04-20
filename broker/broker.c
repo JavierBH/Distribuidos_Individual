@@ -32,7 +32,6 @@ void libera_cola_dic(char *c, void *v){
 
  /*Esta funcion se ejecuta en el caso de que se quiera crear una cola
     Añade la cola al diccionario, asignandole un valor de la cola, ya que se encuentra vacia. DE la siguiente manera:
-    Name_cola : struct cola
 	*/
 
 int crea_cola(struct diccionario *d, char *name){
