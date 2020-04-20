@@ -59,23 +59,23 @@ int elimina_cola(struct diccionario *d, char *name){
 
 //Fucnion que recive el mensaje
 struct mensaje_cola *recv_message(int s){
-	int *tam;
+	uint32_t *tam;
 	char *msg;
     struct mensaje_cola *res;
 	res = malloc(sizeof(struct mensaje_cola));
 	tam = malloc(sizeof(uint32_t));
+
 		//Se recibe el tamaño del mensaje
-		if(read(s,tam,sizeof(uint32_t))<0){
+		if(recv(s,tam,sizeof(uint32_t),MSG_WAITALL)<0){
             res->size=0;
             res->mensaje = NULL;
 			return res;
 		}
-
     res->size = *tam;
 	
     msg = (char*)malloc(*tam);
 	//Se recibe el codigo de operacion
-		if(read(s,msg,*tam)<0){
+		if(recv(s,msg,*tam,MSG_WAITALL)<0){
 			res->size=0;
             res->mensaje = NULL;
 			return res;

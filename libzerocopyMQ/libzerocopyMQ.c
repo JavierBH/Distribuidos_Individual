@@ -14,6 +14,14 @@
 #include <math.h>
 #define TAM 1024
 
+int check_file_length(uint32_t tam){
+    if(tam >pow(2,32)+1){
+        return -1;
+    }
+    return 0;
+}
+
+
 /**************************************************************************************************************
  * Funcion que crea el socket ara la conexion
  * DEvuelve el identificador del socket en caso de que no haya erroes, y -1 en caso de que los haya
@@ -57,7 +65,7 @@ int create_socket(){
 }
 
 int check_name(char *cola){
-    if(strlen(cola) > pow(2,32)){
+    if(strlen(cola) > pow(2,16)+1){
         return -1;
     }
     return 0;
@@ -110,11 +118,16 @@ int send_cabecera(int s, char *op, char *name_cola, int b){
     return 0;
 }
 
-int send_put(int s, char *op, char *name_cola,char *mensaje,int tam,int b){
+int send_put(int s, char *op, char *name_cola,char *mensaje,unsigned int tam,int b){
     struct iovec iov[6];
     int size;
     char * blook;
+    
     if(check_name(name_cola)<0){
+        close(s);
+        return -1;
+    }
+    if(check_file_length(tam)<0){
         close(s);
         return -1;
     }
@@ -166,7 +179,7 @@ char * recv_message(int s,int tam){
 	char *msg;
     msg = (char*)malloc(tam);
 	//Se recibe el codigo de operacion
-		if(read(s,msg,tam)<0){
+		if(recv(s,msg,tam,MSG_WAITALL)<0){
             close(s);
 			return NULL;
 		}
@@ -227,7 +240,6 @@ int put(const char *cola, const void *mensaje, uint32_t tam) {
     if((s = create_socket())<0){
         return -1;
     }
-
     op = "2";
     if (send_put(s,op,(char *)cola,(char *)mensaje,tam,0)<0){
         close(s);
