@@ -15,7 +15,7 @@
 #define TAM 1024
 
 int check_file_length(uint32_t tam){
-    if(tam >pow(2,32)+1){
+    if(tam >pow(2,32)+1 || tam<0){
         return -1;
     }
     return 0;
@@ -118,7 +118,7 @@ int send_cabecera(int s, char *op, char *name_cola, int b){
     return 0;
 }
 
-int send_put(int s, char *op, char *name_cola,char *mensaje,unsigned int tam,int b){
+int send_put(int s, char *op, char *name_cola,char *mensaje,uint32_t tam,int b){
     struct iovec iov[6];
     int size;
     char * blook;

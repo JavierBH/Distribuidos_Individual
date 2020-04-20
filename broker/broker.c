@@ -151,7 +151,8 @@ int delete_get_cola(struct diccionario *d,char *cola){
 int send_mensaje_get(int s_conec,struct diccionario *d, char *name_cola){
 		struct mensaje_cola *msg_put;
 			if((msg_put = lectura_mensaje(d,name_cola))==NULL){
-				send_message(s_conec,NULL,1);
+				//perror("HOla buenas");
+				send_message(s_conec,"ERROR",6);
 				return -1;
 			}
 			send_message(s_conec,msg_put->mensaje,msg_put->size);
