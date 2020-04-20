@@ -276,6 +276,12 @@ int get(const char *cola, void **mensaje, uint32_t *tam, bool blocking) {
         close(s);
         return -1;
     }
+
+    if(strncmp(*mensaje,"0",1)==0){
+        *tam=0;
+        *mensaje="";
+        return 0;
+    }
     close(s);
     return 0;
 }

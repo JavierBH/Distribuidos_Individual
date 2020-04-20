@@ -109,11 +109,20 @@ int escritura_mensaje(struct diccionario *d,char *cola, struct mensaje_cola *msg
 struct mensaje_cola *lectura_mensaje(struct diccionario *d, char *cola){
 	int error;
     struct cola *c;
+	struct mensaje_cola *msg;
     c = dic_get(d,cola,&error);
 	if(error<0){
 		return NULL;
     }
-	return cola_pop_front(c,&error);
+	msg = cola_pop_front(c,&error);
+	if(msg==NULL){
+		struct mensaje_cola *response;
+		response =  malloc(sizeof(struct mensaje_cola));
+		response -> mensaje = "0";
+		response -> size = 2;
+		return response;
+	}
+		return msg; 
 }
 
 int recv_tam(int s){
@@ -170,7 +179,7 @@ int mensaje_get(struct diccionario *dic_mensajes, struct diccionario *dic_get_b,
     }
 	s_conec = cola_pop_front(c,&error);
 	if(error<0){
-		//lala
+
         //No hay elementos en la cola, por lo que no es necesario mandar el mensaje
 		return 0;
     }
