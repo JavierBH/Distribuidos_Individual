@@ -26,7 +26,7 @@ void libera_cola_dic(char *c, void *v){
  	struct cola *cola;
 	cola = v;
 	cola_destroy(cola,libera_cola);
-	 free(c);
+	free(c);
 	
 }
 
@@ -34,12 +34,18 @@ void libera_cola_dic(char *c, void *v){
     Añade la cola al diccionario, asignandole un valor de la cola, ya que se encuentra vacia. DE la siguiente manera:
 	*/
 
-int crea_cola(struct diccionario *d, char *name){
-	struct cola *c;
+int crea_cola(struct diccionario *d, struct diccionario *d_get, char *name){
+	struct cola *c,*c_g;
 	if((c = cola_create())==NULL){
 		return -1;
 	}
+	if((c_g = cola_create())==NULL){
+		return -1;
+	}
  	if(dic_put(d, name, c) < 0){
+		return -1;
+	}
+ 	if(dic_put(d_get, name, c_g) < 0){
 		return -1;
 	}
 	return 0;
@@ -300,9 +306,9 @@ int main(int argc, char *argv[]) {
 		switch (*op){
 		case '0': //Crear Cola
 			free(op);
-			error = crea_cola(d,name_cola);
+			error = crea_cola(d,d_get_bloq,name_cola);
 			send_response(s_conec,error);
-			crea_cola(d_get_bloq,name_cola);	//Se introduce la cola en el diccionario para el get bloqueante	
+			//crea_cola(d_get_bloq,name_cola);	//Se introduce la cola en el diccionario para el get bloqueante	
 			break;
 		case '1': //Destruir Cola
 			free(op);
