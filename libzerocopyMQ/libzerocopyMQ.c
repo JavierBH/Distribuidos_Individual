@@ -22,10 +22,11 @@ int check_file_length(uint32_t tam){
 }
 
 
-/**************************************************************************************************************
- * Funcion que crea el socket ara la conexion
- * DEvuelve el identificador del socket en caso de que no haya erroes, y -1 en caso de que los haya
- ***************************************************************************************************************/
+/**
+ * Funcion que se encarga de crear el socket 
+ * Devuelve el descriptor del socket en caso de acierto y -1 en caso de fallo
+ * */
+
 int create_socket(){
     int s, s_connect;
 	struct sockaddr_in dir;
@@ -71,20 +72,18 @@ int check_name(char *cola){
     return 0;
 }
 
-/***************************************************************************************************************
-    Funcion que envia la cabecera de la operacion,  envia 3 parametros: El cdigo de la operacion, el tamaño del
-         nombre de la cola y el nombre de la cola 
-    Recibe 3 parametros:
-    - s: El identificador del socket
-    - op: Codigo de operacion que equivale con las funciones: 
-            0 -> createMQ
-            1 -> destroyMQ
-            2 -> put
-            3 -> get
-    - name_cola_ NOmbre de la cola
-
-    Devuelve 0 en caso de que no haya errores y -1 en caso de que los haya
-****************************************************************************************************************/
+/**
+ *   Funcion que envia la cabecera de la operacion, Recibe 4 argumentos:
+ * - s: Descriptor del socket
+ * - op: Codigo de operacion que equivale con las funciones: 
+ *   0 -> createMQ
+ *   1 -> destroyMQ
+ *   2 -> put
+ *   3 -> get
+ * - name_cola_ NOmbre de la cola
+ * - b: Identificador de get bloqueante
+ * Devuelve 0 en caso de que no haya errores y -1 en caso de fallo
+ **/
 
 int send_cabecera(int s, char *op, char *name_cola, int b){
     struct iovec iov[4];
@@ -117,6 +116,19 @@ int send_cabecera(int s, char *op, char *name_cola, int b){
     }
     return 0;
 }
+
+/**
+ *   Funcion que envia la cabecera de la operacion, Recibe 4 argumentos:
+ * - s: Descriptor del socket
+ * - op: Codigo de operacion que equivale con las funciones: 
+ *   0 -> createMQ
+ *   1 -> destroyMQ
+ *   2 -> put
+ *   3 -> get
+ * - name_cola_ NOmbre de la cola
+ * - b: Identificador de get bloqueante
+ * Devuelve 0 en caso de que no haya errores y -1 en caso de fallo
+ **/
 
 int send_put(int s, char *op, char *name_cola,char *mensaje,uint32_t tam,int b){
     struct iovec iov[6];
@@ -162,7 +174,11 @@ int send_put(int s, char *op, char *name_cola,char *mensaje,uint32_t tam,int b){
     return 0;
 }
 
-//Fucnion que recive el mensaje
+/**
+ *   Funcion que recibe el tamaño del mensaje, Recibe 1 argumentos:
+ * - s: Descriptor del socket
+ *  Devuelve el tamaño del mensaje en caso de que no haya errores y -1 en caso de fallo
+ **/
 
 int recv_tam(int s){
     int tam;
@@ -174,6 +190,12 @@ int recv_tam(int s){
 		}
     return tam;
 }
+/**
+ *   Funcion que recibe el mensaje, Recibe w argumentos:
+ * - s: Descriptor del socket
+ * - tam: tamaño del mensaje a recibir
+ * Devuelve el mensaje en caso de que no haya errores y NULL en caso de fallo
+ **/
 
 char * recv_message(int s,int tam){
 	char *msg;
@@ -187,17 +209,11 @@ char * recv_message(int s,int tam){
 	return msg;
 }
 
-int send_tam(int s, uint32_t tam){
-    struct iovec iov[1];
-    iov[0].iov_base=&tam;
-    iov[0].iov_len=sizeof(tam);
-    if(writev(s,iov,1)<0){
-        close(s);
-        return -1;
-    }
-    return 0;
-}
-
+/**
+ *   Funcion encargada de crear una cola, Recibe 1 argumento:
+ * - cola: Nombre de la cola que se quiere crear
+ * Devuelve 0 en caso de que no haya errores y -1 en caso de fallo
+ **/
 int createMQ(const char *cola) {
     int s,res;
     char *op;
@@ -215,7 +231,11 @@ int createMQ(const char *cola) {
     close(s);
     return res;
 }
-
+/**
+ *   Funcion encargada de destruir una cola, Recibe 1 argumento:
+ * - cola: Nombre de la cola que se quiere crear
+ * Devuelve 0 en caso de que no haya errores y -1 en caso de fallo
+ **/
 int destroyMQ(const char *cola){
     int s,res;
     char *op;
@@ -233,6 +253,13 @@ int destroyMQ(const char *cola){
     close(s);
     return res;
 }
+/**
+ *   Funcion encargada de introducir un mensaje en una cola, Recibe 3 argumento:
+ * - cola: Nombre de la cola que se quiere crear
+ * - mensaje: mensaje que se quiere guardar
+ * - tam: tamaño del mensaje
+ * Devuelve 0 en caso de que no haya errores y -1 en caso de fallo
+ **/
 
 int put(const char *cola, const void *mensaje, uint32_t tam) {
     int s, res;
@@ -250,6 +277,14 @@ int put(const char *cola, const void *mensaje, uint32_t tam) {
     close(s);
     return res;
 }
+/**
+ *   Funcion encargada de conseguir un mensaje de una cola, Recibe 4 argumentos:
+ * - cola: Nombre de la cola de la  que se quiere obtener el mensaje
+ * - mensaje: puntero donde se quiere almacenar el mensaje 
+ * - tam: puntero donde se quiere almacenar el tamaño del mensaje
+ * - blocking: Parametro que indica si el get es bloqueante
+ * Devuelve 0 en caso de que no haya errores y -1 en caso de fallo
+ **/
 
 int get(const char *cola, void **mensaje, uint32_t *tam, bool blocking) {
     int s;

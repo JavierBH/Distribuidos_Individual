@@ -10,18 +10,19 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#define TAM 1024
 
-   // Funcion que libera la estructura de datos de la cola
+// Estructura encargada de almacenar el mensaje y su tamaño
 struct mensaje_cola{
-	int size;
-	char * mensaje;
+	int size; // tamaño del mensaje
+	char * mensaje; //mensaje
 };
 
+//Funcion que libera el espacio de la cola
 void libera_cola(void *v){
 	free(v);
 }
 
+//FUncion que libera el espacio asignado al diccionario
 void libera_cola_dic(char *c, void *v){
  	struct cola *cola;
 	cola = v;
@@ -30,9 +31,15 @@ void libera_cola_dic(char *c, void *v){
 	
 }
 
- /*Esta funcion se ejecuta en el caso de que se quiera crear una cola
-    Añade la cola al diccionario, asignandole un valor de la cola, ya que se encuentra vacia. DE la siguiente manera:
-	*/
+
+/**
+ * Funcion que se encarga de crear la cola y añadirla al diccionario, recibe 3 argumentos: 
+ * - d: Diccionario en el que se almacenan los mensajes
+ * - d_get: Diccionario en el que se almacenan los clientes que estan esperando un mensaje
+ * - name: nombre de la cola que se quiere crear
+ * 
+ * Devuelve 0 en caso de acierto y -1 en caso de fallo
+ * */
 
 int crea_cola(struct diccionario *d, struct diccionario *d_get, char *name){
 	struct cola *c,*c_g;
@@ -42,6 +49,7 @@ int crea_cola(struct diccionario *d, struct diccionario *d_get, char *name){
 	if((c_g = cola_create())==NULL){
 		return -1;
 	}
+	//Se añaden las colas a los diccionarios
  	if(dic_put(d, name, c) < 0){
 		return -1;
 	}
@@ -51,11 +59,33 @@ int crea_cola(struct diccionario *d, struct diccionario *d_get, char *name){
 	return 0;
 }
 
-/*Esta funcion se ejecuta cuando llega una operacion de eliminar cola.
-Busca en el diccionario la cola que se quiere eliminar y si existe la borra, junto a sus mensajes.
-En caso de que no exista da un error*/
+/**
+ * Funcion que se encarga de eliminar la cola indicada, recibe 3 argumentos: 
+ * - d: Diccionario en el que se almacenan los mensajes
+ * - d_get: Diccionario en el que se almacenan los clientes que estan esperando un mensaje
+ * - name: nombre de la cola que se quiere crear
+ * 
+ * Devuelve 0 en caso de acierto y -1 en caso de fallo
+ * */
 
-int elimina_cola(struct diccionario *d, char *name){
+int elimina_cola(struct diccionario *d, struct diccionario *d_get, char *name){
+	int *error;
+    struct cola *c;
+	int *s_conec;
+	error = malloc(sizeof(int));
+    c = dic_get(d_get,name,error);
+	if(error<0){
+		return -1;
+    }
+	//Se manda un mensaje a cada uno de los clientes que estaban esperando
+	while((s_conec = cola_pop_front(c,error))!= NULL && error>0 ){
+		send_response(*s_conec,1);
+		close(*s_conec);
+		free(s_conec);
+	}
+	free(error);
+
+	//Se elimina la cola indicada
 	if (dic_remove_entry(d,name, libera_cola_dic) < 0){
 			return -1;
 	}
@@ -90,12 +120,19 @@ struct mensaje_cola *recv_message(int s){
 	return res;
 }
 
-    //Esta funcion se ejectua cuando llega la orden de añadir un mensaje a la cola corresponiente
+/**
+ * Funcion que se encarga de añadir un mensaje a la cola indicada, recibe 3 argumentos: 
+ * - d: Diccionario en el que se almacenan los mensajes
+ * - d_get: Diccionario en el que se almacenan los clientes que estan esperando un mensaje
+ * - msg: Mensaje que se quiere introducir en la cola
+ *   
+ * Devuelve 0 en caso de acierto y -1 en caso de fallo
+ * */
 
-int escritura_mensaje(struct diccionario *d,char *cola, struct mensaje_cola *msg){
+int escritura_mensaje(struct diccionario *d,char *name, struct mensaje_cola *msg){
     int error ;
     struct cola *c;
-    c = dic_get(d,cola,&error);
+    c = dic_get(d,name,&error);
 	if(msg->mensaje == NULL){
 		return -1;
 	}
@@ -110,13 +147,20 @@ int escritura_mensaje(struct diccionario *d,char *cola, struct mensaje_cola *msg
    return 0;
 }
 
- //   Esta funcion se ejectua cuando llega la orden de leer un mensaje
+/**
+ * Funcion que se encarga de leer un mensaje de la cola, recibe 2 argumentos: 
+ * - d: Diccionario en el que se almacenan los mensajes
+ * - name: nombre de la cola que se quiere crear
+ * 
+ * Devuelve el mensaje en caso de acierto y un mensaje que contiene un 0 en caso de que la cola este vacia
+ * ya que es la forma de indicar al cliente que la cola se encontraba vacia y NULL en caso de fallo
+ * */
 
-struct mensaje_cola *lectura_mensaje(struct diccionario *d, char *cola){
+struct mensaje_cola *lectura_mensaje(struct diccionario *d, char *name){
 	int error;
     struct cola *c;
 	struct mensaje_cola *msg;
-    c = dic_get(d,cola,&error);
+    c = dic_get(d,name,&error);
 	if(error<0){
 		return NULL;
     }
@@ -131,74 +175,66 @@ struct mensaje_cola *lectura_mensaje(struct diccionario *d, char *cola){
 		return msg; 
 }
 
-int recv_tam(int s){
-	int tam;
-	if(read(s,&tam,sizeof(int))<0){
-			close(s);
-			return -1;
-		}
-	return tam;
-}
+/**
+ * Funcion que se encarga de mandar un mensaje al cliente correspondiente, recibe 3 argumentos: 
+ * - s: Identificador del socket sobre el que se va a mandar el mensaje
+ * - d: Diccionario en el que se almacenan los clientes que estan esperando un mensaje
+ * - name: nombre de la cola que se quiere crear
+ * 
+ * Devuelve 0 en caso de acierto y -1 en caso de fallo
+ * */
 
-int delete_get_cola(struct diccionario *d,char *cola){
-	char *msg;
-	int error;
-    struct cola *c;
-	int *s_conec;
-    c = dic_get(d,cola,&error);
-	if(error<0){
-		return -1;
-    }
-	
-	msg = "ERROR";
-	//Se manda un mensaje a cada uno de los clientes que estaban esperando
-	while((s_conec = cola_pop_front(c,&error))!= NULL && error>0 ){
-		send_message(*s_conec,msg,strlen(msg));
-		close(*s_conec);
-		free(s_conec);
-	}
-	//Se elimina la cola
-	return elimina_cola(d, cola);
-}
-
-//Funcion encargada de mandar el mensje del get
-int send_mensaje_get(int s_conec,struct diccionario *d, char *name_cola){
+int send_mensaje_get(int s_conec,struct diccionario *d, char *name){
 		struct mensaje_cola *msg_put;
-			if((msg_put = lectura_mensaje(d,name_cola))==NULL){
-				//perror("HOla buenas");
+			if((msg_put = lectura_mensaje(d,name))==NULL){
+				//Se indica que ha habido un error al leer el mensaje
 				send_message(s_conec,"ERROR",6);
 				return -1;
 			}
+			//Se envia el mensaje
 			send_message(s_conec,msg_put->mensaje,msg_put->size);
 		free(msg_put);
 		return 0;
 }
 
-//Funcion que desbloquea uno de los clientes esperando a leer el mensaje de la cola indicada
-int mensaje_get(struct diccionario *dic_mensajes, struct diccionario *dic_get_b, char *cola){
+/**
+ * Funcion que se encarga de desbloquear un cliente, recibe 3 argumentos: 
+ * - d: Diccionario en el que se almacenan los mensajes
+ * - d_get: Diccionario en el que se almacenan los clientes que estan esperando un mensaje
+ * - name: nombre de la cola que se quiere crear
+ * 
+ * Devuelve el descriptor del socket en caso de acierto y -1 en caso de fallo
+ * */
+
+int mensaje_get(struct diccionario *d, struct diccionario *d_get, char *cola){
 	int error;
     struct cola *c;
 	int *s_conec;
-	c = dic_get(dic_get_b,cola,&error);
+	c = dic_get(d_get,cola,&error);
 	if(error<0){
 		return -1;
     }
 	s_conec = cola_pop_front(c,&error);
 	if(error<0){
-
-        //No hay elementos en la cola, por lo que no es necesario mandar el mensaje
-		return 0;
+		return -1;
     }
 	//Se envia el mensaje
-	return send_mensaje_get(*s_conec,dic_mensajes,cola);
+	return send_mensaje_get(*s_conec,d,cola);
 }
 
-
-int get_bloqueante(int s_conec,struct diccionario *d, char * cola){
+/**
+ * Funcion que se encarga de introducir un cliente en el diccionario de clientes en espera, recibe 3 argumentos: 
+ * - s_conec: Descriptor del socket
+ * - d_get: Diccionario en el que se almacenan los clientes que estan esperando un mensaje
+ * - name: nombre de la cola que se quiere crear
+ * 
+ * Devuelve 0 en caso de acierto y -1 en caso de fallo
+ * */
+int get_bloqueante(int s_conec,struct diccionario *d_get, char * name){
 	int error ;
     struct cola *c;
 	int *s;
-    c = dic_get(d,cola,&error);
+    c = dic_get(d_get,name,&error);
 
     if(error<0){
 		return -1;
@@ -211,12 +247,18 @@ int get_bloqueante(int s_conec,struct diccionario *d, char * cola){
    return 0;
 }
 
-//Comprueba que hay elementos en la cola indicada
-int check_elements(struct diccionario *d, char *name_cola){
+/**
+ * Funcion que comprueba si hay elementos en la cola indicada, recibe 3 argumentos: 
+ * - d: Diccionario en el que se quiere comprobar si hay mensajes
+ * - name: nombre de la cola que se quiere crear
+ * 
+ * Devuelve la longitud de la cola en caso de acierto y -1 en caso de fallo
+ * */
+int check_elements(struct diccionario *d, char *name){
 		struct cola *c;
 		int *error;
 		error=malloc(sizeof(int));
-		c = dic_get(d,name_cola,error);
+		c = dic_get(d,name,error);
 		if(*error<0){
 			return -1;
 		}
@@ -296,7 +338,7 @@ int main(int argc, char *argv[]) {
 			close(s);
 			return -1;
 		}
-
+		//Se recibe el identifcador de get bloqueante
 		b = malloc(2);
 		if(recv(s_conec,b,2,MSG_WAITALL)<0){
 			close(s);
@@ -308,20 +350,17 @@ int main(int argc, char *argv[]) {
 			free(op);
 			error = crea_cola(d,d_get_bloq,name_cola);
 			send_response(s_conec,error);
-			//crea_cola(d_get_bloq,name_cola);	//Se introduce la cola en el diccionario para el get bloqueante	
 			break;
 		case '1': //Destruir Cola
 			free(op);
-			error = elimina_cola(d,name_cola);
+			error = elimina_cola(d,d_get_bloq,name_cola);
 			send_response(s_conec,error);
-			delete_get_cola(d_get_bloq,name_cola); //Se elimina la cola del get bloqueante
 			break;
 		case '2': //put
 			free(op);
 			struct mensaje_cola *mensaje;
 			mensaje = recv_message(s_conec);
 			error = escritura_mensaje(d,name_cola,mensaje);	
-			// Se envia la respuesta del mensaje
 			send_response(s_conec,error);
 			mensaje_get(d,d_get_bloq,name_cola); //Se envia el mensaje al get bloqueante	
 			break;
@@ -340,6 +379,7 @@ int main(int argc, char *argv[]) {
 			close(s_conec);
 			break;
 		}
+		//Si el get no es bloqueante se cierra el descriptor
 		if(strncmp(b,"1",1)!=0){
 			close(s_conec);
 		}
