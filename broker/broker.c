@@ -92,7 +92,12 @@ int elimina_cola(struct diccionario *d, struct diccionario *d_get, char *name){
 	return 0;
 }
 
-//Fucnion que recive el mensaje
+/**
+ * Funcion que se encarga de recivir un mensaje del cliente, recibe 1 argumento: 
+ * - s: DEscriptor del socket por el que s eva a recibir el mensaje 
+ * Devuelve 0 en caso de acierto y -1 en caso de fallo
+ * */
+
 struct mensaje_cola *recv_message(int s){
 	uint32_t *tam;
 	char *msg;
